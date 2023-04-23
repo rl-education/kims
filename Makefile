@@ -18,7 +18,7 @@ init:
 	fi;\
 	pip install -U pip
 	pdm install
-	pre-commit install
+	pdm run pre-commit install
 
 format:
 	pdm run black .
