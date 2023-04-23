@@ -15,5 +15,3 @@ jobs:
         shell: bash -l {0}
         run: make init
       - uses: pre-commit/action@v3.0.0
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
