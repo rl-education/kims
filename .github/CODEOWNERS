@@ -1,0 +1,4 @@
+## code changes will send PR to following users
+# Order is important; the last matching pattern takes the most precedence
+
+* @dongminlee94 @limjiyoon @yurirocha15

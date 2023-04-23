@@ -11,17 +11,6 @@ jobs:
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
 
-  assign-reviewer:
-    runs-on: ubuntu-latest
-    steps:
-      - name: reviewers
-        uses: hkusu/review-assign-action@v1
-        with:
-          assignees: ${{ github.actor }}
-          reviewers: dongminlee94, limjiyoon, yurirocha15
-          max-num-of-reviewers: 2
-          draft-keyword: WIP
-
   size-label:
     runs-on: ubuntu-latest
     steps:
