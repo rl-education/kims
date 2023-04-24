@@ -1,0 +1,16 @@
+version: 1
+labels:
+  - label: "feature"
+    branch: "^feature/.*"
+  - label: "bugfix"
+    branch: "^bugfix/.*"
+  - label: "hotfix"
+    branch: "^hotfix/.*"
+  - label: "enhancement"
+    branch: "^enhance/.*"
+  - label: "style"
+    branch: "^style/*"
+  - label: "docs"
+    branch: "^docs/*"
+  - label: "need-to-change-branch-name"
+    branch: "^(?!^feature/.*$)(?!^bugfix/.*$)(?!^hotfix/.*$)(?!^enhance/.*$)(?!^style/.*$)(?!^docs/.*$).*$"
