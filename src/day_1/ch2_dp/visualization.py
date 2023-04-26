@@ -189,7 +189,7 @@ def visualize_results(
     cax = divider.append_axes("right", size="5%", pad=0.05)
     fig.colorbar(im, cax=cax, orientation="vertical")
     fig.suptitle(title, size=title_fs)
-    fig.tight_layout()  # pyright: reportGeneralTypeIssues=false
+    fig.tight_layout()
     fig.subplots_adjust(top=0.9)
 
     plt.setp(ax[0].get_xticklabels(), visible=False)

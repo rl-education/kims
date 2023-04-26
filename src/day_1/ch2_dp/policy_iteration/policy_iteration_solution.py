@@ -98,8 +98,8 @@ def run(num_episodes: int, env: gym.Env, action_num: int, policy_table: np.ndarr
 if __name__ == "__main__":
     env = gym.make("FrozenLake8x8-v1", is_slippery=False, render_mode="human")
 
-    observ_num = env.observation_space.n  # pyright: reportGeneralTypeIssues=false
-    action_num = env.action_space.n  # pyright: reportGeneralTypeIssues=false
+    observ_num = env.observation_space.n
+    action_num = env.action_space.n
     print(f"observ_num: {observ_num} | action_num: {action_num}")
 
     start_time = time.time()

@@ -97,5 +97,13 @@ pylint = {"max-args"=12, "max-statements"=60}
 
 # Python static type checker
 [tool.pyright]
-include = ["kims"]
+pythonVersion = "3.10"
+pythonPlatform = "Linux"
+include = ["./**/src"]
+exclude = ["**/__pycache__"]
+ignore = []
+useLibraryCodeForTypes = true
 reportMissingImports = true
+reportMissingTypeStubs = false
+reportOptionalSubscript = false
+reportGeneralTypeIssues = false
