@@ -1,4 +1,4 @@
-"""Policy iteration."""
+"""Policy iteration solution."""
 import time
 from typing import Any
 
@@ -38,9 +38,9 @@ def policy_evaluation(
 
 def policy_improvement(value_table: np.ndarray, dynamics: dict[int, Any], gamma: float = 0.99) -> np.ndarray:
     """Policy improvement."""
-    # Initialize Q-function table and policy prime
-    q_table = np.zeros((observ_num, action_num))
+    # Initialize policy prime and Q-function table
     policy_prime = np.zeros((observ_num, action_num))
+    q_table = np.zeros((observ_num, action_num))
 
     # Update Q-function table through policy improvement
     for s in dynamics:
