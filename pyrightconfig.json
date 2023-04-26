@@ -1,0 +1,20 @@
+{
+    "include": [
+      "./**/src",
+    ],
+    "exclude": [
+      "**/__pycache__"
+    ],
+
+    "ignore": [
+      "external"
+    ],
+
+    "useLibraryCodeForTypes": true,
+
+    "reportMissingImports": true,
+    "reportMissingTypeStubs": false,
+
+    "pythonVersion": "3.10",
+    "pythonPlatform": "Linux",
+  }
