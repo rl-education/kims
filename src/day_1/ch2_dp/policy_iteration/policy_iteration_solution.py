@@ -76,22 +76,21 @@ def policy_iteration(env: gym.Env, observ_num: int, action_num: int) -> tuple[np
     return policy_table, value_table
 
 
-def run(num_episodes: int, env: gym.Env, action_num: int, policy_table: np.ndarray) -> float:
+def run(env: gym.Env, action_num: int, policy_table: np.ndarray) -> float:
     """Run episodes."""
+    done = False
     total_reward = 0.0
-    for _ in range(num_episodes):
-        done = False
-        obs, _ = env.reset()
+    obs, _ = env.reset()
 
-        while not done:
-            env.render()
+    while not done:
+        env.render()
 
-            action = np.random.choice(action_num, 1, p=policy_table[obs][:])[0]
-            next_obs, reward, done, _, _ = env.step(action)
+        action = np.random.choice(action_num, 1, p=policy_table[obs][:])[0]
+        next_obs, reward, done, _, _ = env.step(action)
 
-            total_reward += reward
-            obs = next_obs
-            time.sleep(0.3)
+        total_reward += reward
+        obs = next_obs
+        time.sleep(0.3)
     return total_reward
 
 
@@ -108,8 +107,12 @@ if __name__ == "__main__":
 
     visualize_results(policy=policy_table, value=np.reshape(value_table, (8, 8)), title="Policy Iteration")
 
+    sum_returns = 0.0
     num_episodes = 3
-    sum_returns = run(num_episodes=num_episodes, env=env, action_num=action_num, policy_table=policy_table)
+    for _ in range(num_episodes):
+        episode_return = run(env=env, action_num=action_num, policy_table=policy_table)
+        sum_returns += episode_return
+
     print(
         f"\ntotal_time: {end_time}\n"
         f"num_episodes: {num_episodes}\n"
