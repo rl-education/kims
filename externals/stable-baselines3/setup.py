@@ -106,7 +106,7 @@ setup(
         # For saving models
         "cloudpickle",
         # For reading logs
-        "pandas",
+        # "pandas",
         # Plotting learning curves
         "matplotlib",
         # gym not compatible with importlib-metadata>5.0
