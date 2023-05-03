@@ -68,7 +68,7 @@ class Actor(BasePolicy):
                 features_dim=self.features_dim,
                 activation_fn=self.activation_fn,
                 features_extractor=self.features_extractor,
-            )
+            ),
         )
         return data
 
@@ -157,7 +157,7 @@ class TD3Policy(BasePolicy):
                 "n_critics": n_critics,
                 "net_arch": critic_arch,
                 "share_features_extractor": share_features_extractor,
-            }
+            },
         )
 
         self.actor, self.actor_target = None, None
@@ -210,7 +210,7 @@ class TD3Policy(BasePolicy):
                 features_extractor_class=self.features_extractor_class,
                 features_extractor_kwargs=self.features_extractor_kwargs,
                 share_features_extractor=self.share_features_extractor,
-            )
+            ),
         )
         return data
 

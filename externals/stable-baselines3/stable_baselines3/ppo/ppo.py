@@ -151,7 +151,7 @@ class PPO(OnPolicyAlgorithm):
                     f" after every {untruncated_batches} untruncated mini-batches,"
                     f" there will be a truncated mini-batch of size {buffer_size % batch_size}\n"
                     f"We recommend using a `batch_size` that is a factor of `n_steps * n_envs`.\n"
-                    f"Info: (n_steps={self.n_steps} and n_envs={self.env.num_envs})"
+                    f"Info: (n_steps={self.n_steps} and n_envs={self.env.num_envs})",
                 )
         self.batch_size = batch_size
         self.n_epochs = n_epochs
@@ -235,7 +235,7 @@ class PPO(OnPolicyAlgorithm):
                     # Clip the difference between old and new value
                     # NOTE: this depends on the reward scaling
                     values_pred = rollout_data.old_values + th.clamp(
-                        values - rollout_data.old_values, -clip_range_vf, clip_range_vf
+                        values - rollout_data.old_values, -clip_range_vf, clip_range_vf,
                     )
                 # Value loss using the TD(gae_lambda) target
                 value_loss = F.mse_loss(rollout_data.returns, values_pred)

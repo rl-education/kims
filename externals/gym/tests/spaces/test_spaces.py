@@ -17,7 +17,7 @@ from gym.spaces import Tuple, Box, Discrete, MultiDiscrete, MultiBinary, Dict
             [
                 Discrete(5),
                 Box(low=np.array([0, 0]), high=np.array([1, 5]), dtype=np.float32),
-            ]
+            ],
         ),
         Tuple((Discrete(5), Discrete(2), Discrete(2))),
         MultiDiscrete([2, 2, 100]),
@@ -26,9 +26,9 @@ from gym.spaces import Tuple, Box, Discrete, MultiDiscrete, MultiBinary, Dict
             {
                 "position": Discrete(5),
                 "velocity": Box(
-                    low=np.array([0, 0]), high=np.array([1, 5]), dtype=np.float32
+                    low=np.array([0, 0]), high=np.array([1, 5]), dtype=np.float32,
                 ),
-            }
+            },
         ),
     ],
 )
@@ -63,7 +63,7 @@ def test_roundtripping(space):
             [
                 Discrete(5),
                 Box(low=np.array([0, 0]), high=np.array([1, 5]), dtype=np.float32),
-            ]
+            ],
         ),
         Tuple((Discrete(5), Discrete(2), Discrete(2))),
         MultiDiscrete([2, 2, 100]),
@@ -72,9 +72,9 @@ def test_roundtripping(space):
             {
                 "position": Discrete(5),
                 "velocity": Box(
-                    low=np.array([0, 0]), high=np.array([1, 5]), dtype=np.float32
+                    low=np.array([0, 0]), high=np.array([1, 5]), dtype=np.float32,
                 ),
-            }
+            },
         ),
     ],
 )
@@ -188,10 +188,10 @@ def test_seed_Dict():
                 {
                     "b_1": Box(low=-100, high=100, shape=(2,)),
                     "b_2": Box(low=-1, high=1, shape=(2,)),
-                }
+                },
             ),
             "c": Discrete(5),
-        }
+        },
     )
 
     seed_dict = {
@@ -252,7 +252,7 @@ def test_box_dtype_check():
             [
                 Discrete(5),
                 Box(low=np.array([0, 0]), high=np.array([1, 5]), dtype=np.float32),
-            ]
+            ],
         ),
         Tuple((Discrete(5), Discrete(2), Discrete(2))),
         MultiDiscrete([2, 2, 100]),
@@ -261,9 +261,9 @@ def test_box_dtype_check():
             {
                 "position": Discrete(5),
                 "velocity": Box(
-                    low=np.array([0, 0]), high=np.array([1, 5]), dtype=np.float32
+                    low=np.array([0, 0]), high=np.array([1, 5]), dtype=np.float32,
                 ),
-            }
+            },
         ),
     ],
 )
@@ -304,7 +304,7 @@ def sample_equal(sample1, sample2):
             [
                 Discrete(5),
                 Box(low=np.array([0, 0]), high=np.array([1, 5]), dtype=np.float32),
-            ]
+            ],
         ),
         Tuple((Discrete(5), Discrete(2), Discrete(2))),
         MultiDiscrete([2, 2, 100]),
@@ -313,9 +313,9 @@ def sample_equal(sample1, sample2):
             {
                 "position": Discrete(5),
                 "velocity": Box(
-                    low=np.array([0, 0]), high=np.array([1, 5]), dtype=np.float32
+                    low=np.array([0, 0]), high=np.array([1, 5]), dtype=np.float32,
                 ),
-            }
+            },
         ),
     ],
 )
@@ -339,16 +339,16 @@ def test_seed_reproducibility(space):
             [
                 Discrete(5),
                 Box(low=np.array([0, 0]), high=np.array([1, 5]), dtype=np.float32),
-            ]
+            ],
         ),
         Tuple((Discrete(5), Discrete(2), Discrete(2))),
         Dict(
             {
                 "position": Discrete(5),
                 "velocity": Box(
-                    low=np.array([0, 0]), high=np.array([1, 5]), dtype=np.float32
+                    low=np.array([0, 0]), high=np.array([1, 5]), dtype=np.float32,
                 ),
-            }
+            },
         ),
     ],
 )

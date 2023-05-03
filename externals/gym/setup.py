@@ -25,7 +25,7 @@ nomujoco_blacklist = set(["mujoco", "robotics", "accept-rom-license"])
 nomujoco_groups = set(extras.keys()) - nomujoco_blacklist
 
 extras["nomujoco"] = list(
-    itertools.chain.from_iterable(map(lambda group: extras[group], nomujoco_groups))
+    itertools.chain.from_iterable(map(lambda group: extras[group], nomujoco_groups)),
 )
 
 
@@ -33,7 +33,7 @@ all_blacklist = set(["accept-rom-license"])
 all_groups = set(extras.keys()) - all_blacklist
 
 extras["all"] = list(
-    itertools.chain.from_iterable(map(lambda group: extras[group], all_groups))
+    itertools.chain.from_iterable(map(lambda group: extras[group], all_groups)),
 )
 
 setup(
@@ -62,7 +62,7 @@ setup(
             "envs/robotics/assets/stls/fetch/*.stl",
             "envs/robotics/assets/stls/hand/*.stl",
             "envs/robotics/assets/textures/*.png",
-        ]
+        ],
     },
     tests_require=["pytest", "mock"],
     python_requires=">=3.6",

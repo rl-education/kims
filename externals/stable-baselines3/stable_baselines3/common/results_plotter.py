@@ -69,7 +69,7 @@ def ts2xy(data_frame: pd.DataFrame, x_axis: str) -> Tuple[np.ndarray, np.ndarray
 
 
 def plot_curves(
-    xy_list: List[Tuple[np.ndarray, np.ndarray]], x_axis: str, title: str, figsize: Tuple[int, int] = (8, 2)
+    xy_list: List[Tuple[np.ndarray, np.ndarray]], x_axis: str, title: str, figsize: Tuple[int, int] = (8, 2),
 ) -> None:
     """
     plot the curves
@@ -99,7 +99,7 @@ def plot_curves(
 
 
 def plot_results(
-    dirs: List[str], num_timesteps: Optional[int], x_axis: str, task_name: str, figsize: Tuple[int, int] = (8, 2)
+    dirs: List[str], num_timesteps: Optional[int], x_axis: str, task_name: str, figsize: Tuple[int, int] = (8, 2),
 ) -> None:
     """
     Plot the results using csv files from ``Monitor`` wrapper.

@@ -66,8 +66,8 @@ class EnvSpec(object):
         if not match:
             raise error.Error(
                 "Attempted to register malformed environment ID: {}. (Currently all IDs must be of the form {}.)".format(
-                    id, env_id_re.pattern
-                )
+                    id, env_id_re.pattern,
+                ),
             )
         self._env_name = match.group(1)
 
@@ -76,8 +76,8 @@ class EnvSpec(object):
         if self.entry_point is None:
             raise error.Error(
                 "Attempting to make deprecated env {}. (HINT: is there a newer registered version of this env?)".format(
-                    self.id
-                )
+                    self.id,
+                ),
             )
 
         _kwargs = self._kwargs.copy()
@@ -140,8 +140,8 @@ class EnvRegistry(object):
             except ModuleNotFoundError:
                 raise error.Error(
                     "A module ({}) was specified for the environment but was not found, make sure the package is installed with `pip install` before calling `gym.make()`".format(
-                        mod_name
-                    )
+                        mod_name,
+                    ),
                 )
         else:
             id = path
@@ -150,8 +150,8 @@ class EnvRegistry(object):
         if not match:
             raise error.Error(
                 "Attempted to look up malformed environment ID: {}. (Currently all IDs must be of the form {}.)".format(
-                    id.encode("utf-8"), env_id_re.pattern
-                )
+                    id.encode("utf-8"), env_id_re.pattern,
+                ),
             )
 
         try:
@@ -184,20 +184,20 @@ class EnvRegistry(object):
             if matching_envs:
                 raise error.DeprecatedEnv(
                     "Env {} not found (valid versions include {})".format(
-                        id, matching_envs
-                    )
+                        id, matching_envs,
+                    ),
                 )
             elif env_name in algorithmic_envs:
                 raise error.UnregisteredEnv(
                     "Algorithmic environment {} has been moved out of Gym. Install it via `pip install gym-algorithmic` and add `import gym_algorithmic` before using it.".format(
-                        id
-                    )
+                        id,
+                    ),
                 )
             elif env_name in toytext_envs:
                 raise error.UnregisteredEnv(
                     "Toytext environment {} has been moved out of Gym. Install it via `pip install gym-legacy-toytext` and add `import gym_toytext` before using it.".format(
-                        id
-                    )
+                        id,
+                    ),
                 )
             else:
                 raise error.UnregisteredEnv("No registered env with id: {}".format(id))
@@ -209,7 +209,7 @@ class EnvRegistry(object):
                 logger.warn(
                     f"Custom namespace '{namespace}' is being overrode by namespace '{self._ns}'. "
                     "If you are developing a plugin you shouldn't specify a namespace in `register` calls. "
-                    "The namespace is specified through the entry point key."
+                    "The namespace is specified through the entry point key.",
                 )
             id = f"{self._ns}/{id}"
         if id in self.env_specs:
@@ -260,7 +260,7 @@ def load_env_plugins(entry_point="gym.envs"):
         finally:
             if attr is None:
                 raise error.Error(
-                    f"Gym environment plugin `{module}` must specify a function to execute, not a root module"
+                    f"Gym environment plugin `{module}` must specify a function to execute, not a root module",
                 )
 
         context = namespace(plugin.name)
@@ -269,7 +269,7 @@ def load_env_plugins(entry_point="gym.envs"):
                 context = contextlib.nullcontext()
             else:
                 logger.warn(
-                    f"Trying to register an internal environment when `{module}` is not in the whitelist"
+                    f"Trying to register an internal environment when `{module}` is not in the whitelist",
                 )
 
         with context:

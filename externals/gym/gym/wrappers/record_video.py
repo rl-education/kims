@@ -39,7 +39,7 @@ class RecordVideo(gym.Wrapper):
         # Create output folder if needed
         if os.path.isdir(self.video_folder):
             warnings.warn(
-                f"Overwriting existing videos at {self.video_folder} folder (try specifying a different `video_folder` for the `RecordVideo` wrapper if this is not desired)"
+                f"Overwriting existing videos at {self.video_folder} folder (try specifying a different `video_folder` for the `RecordVideo` wrapper if this is not desired)",
             )
         os.makedirs(self.video_folder, exist_ok=True)
 

@@ -14,7 +14,7 @@ The action space is `(dir)`, where `dir` decides direction to move in which can 
 - 0: LEFT
 - 1: DOWN
 - 2: RIGHT
-- 3: UP 
+- 3: UP
 
 The observation is a value representing the agents current position as
 
@@ -39,9 +39,9 @@ gym.make('FrozenLake-v0', desc=None,map_name="4x4", is_slippery=True)
 `map_name`: ID to use any of the preloaded maps.
 
     "4x4":[
-        "SFFF", 
-        "FHFH", 
-        "FFFH", 
+        "SFFF",
+        "FHFH",
+        "FFFH",
         "HFFG"
         ]
 
@@ -57,14 +57,14 @@ gym.make('FrozenLake-v0', desc=None,map_name="4x4", is_slippery=True)
     ]
 
 
-    
+
 
 `is_slippery`: True/False. If True will move in intended direction with probability of 1/3 else will move in either perpendicular direction with equal probability of 1/3 in both directions.
 
     For example, if action is left and is_slippery is True, then:
     - P(move left)=1/3
     - P(move up)=1/3
-    - P(move down)=1/3 
+    - P(move down)=1/3
 ### Version History
 
 * v0: Initial versions release (1.0.0)

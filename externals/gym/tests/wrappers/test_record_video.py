@@ -24,7 +24,7 @@ def test_record_video_using_default_trigger():
     assert os.path.isdir("videos")
     mp4_files = [file for file in os.listdir("videos") if file.endswith(".mp4")]
     assert len(mp4_files) == sum(
-        [capped_cubic_video_schedule(i) for i in range(env.episode_id + 1)]
+        [capped_cubic_video_schedule(i) for i in range(env.episode_id + 1)],
     )
     shutil.rmtree("videos")
 
@@ -52,7 +52,7 @@ def make_env(gym_id, seed):
         env._max_episode_steps = 20
         if seed == 1:
             env = gym.wrappers.RecordVideo(
-                env, "videos", step_trigger=lambda x: x % 100 == 0
+                env, "videos", step_trigger=lambda x: x % 100 == 0,
             )
         return env
 

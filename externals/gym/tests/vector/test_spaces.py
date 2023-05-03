@@ -11,10 +11,10 @@ expected_batch_spaces_4 = [
     Box(low=0.0, high=10.0, shape=(4, 1), dtype=np.float32),
     Box(
         low=np.array(
-            [[-1.0, 0.0, 0.0], [-1.0, 0.0, 0.0], [-1.0, 0.0, 0.0], [-1.0, 0.0, 0.0]]
+            [[-1.0, 0.0, 0.0], [-1.0, 0.0, 0.0], [-1.0, 0.0, 0.0], [-1.0, 0.0, 0.0]],
         ),
         high=np.array(
-            [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0]]
+            [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0]],
         ),
         dtype=np.float32,
     ),
@@ -25,7 +25,7 @@ expected_batch_spaces_4 = [
                 [[-1.0, 0.0], [0.0, -1.0]],
                 [[-1.0, 0.0], [0.0, -1]],
                 [[-1.0, 0.0], [0.0, -1.0]],
-            ]
+            ],
         ),
         high=np.ones((4, 2, 2)),
         dtype=np.float32,
@@ -42,7 +42,7 @@ expected_batch_spaces_4 = [
                 high=np.array([[1.0, 1.0], [1.0, 1.0], [1.0, 1.0], [1.0, 1.0]]),
                 dtype=np.float32,
             ),
-        )
+        ),
     ),
     Box(
         low=np.array([[0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]]),
@@ -54,7 +54,7 @@ expected_batch_spaces_4 = [
         {
             "position": MultiDiscrete([23, 23, 23, 23]),
             "velocity": Box(low=0.0, high=1.0, shape=(4, 1), dtype=np.float32),
-        }
+        },
     ),
     Dict(
         {
@@ -62,15 +62,15 @@ expected_batch_spaces_4 = [
                 {
                     "x": MultiDiscrete([29, 29, 29, 29]),
                     "y": MultiDiscrete([31, 31, 31, 31]),
-                }
+                },
             ),
             "velocity": Tuple(
                 (
                     MultiDiscrete([37, 37, 37, 37]),
                     Box(low=0, high=255, shape=(4,), dtype=np.uint8),
-                )
+                ),
             ),
-        }
+        },
     ),
 ]
 
@@ -80,7 +80,7 @@ expected_custom_batch_spaces_4 = [
         (
             Tuple((CustomSpace(), CustomSpace(), CustomSpace(), CustomSpace())),
             Box(low=0, high=255, shape=(4,), dtype=np.uint8),
-        )
+        ),
     ),
 ]
 

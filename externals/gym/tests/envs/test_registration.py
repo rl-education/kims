@@ -84,7 +84,7 @@ def test_malformed_lookup():
         registry.spec(u"“Breakout-v0”")
     except error.Error as e:
         assert "malformed environment ID" in "{}".format(
-            e
+            e,
         ), "Unexpected message: {}".format(e)
     else:
         assert False

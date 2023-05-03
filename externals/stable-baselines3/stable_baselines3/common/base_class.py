@@ -176,7 +176,7 @@ class BaseAlgorithm(ABC):
 
             if not support_multi_env and self.n_envs > 1:
                 raise ValueError(
-                    "Error: the model does not support multiple envs; it requires " "a single vectorized environment."
+                    "Error: the model does not support multiple envs; it requires " "a single vectorized environment.",
                 )
 
             # Catch common mistake: using MlpPolicy/CnnPolicy instead of MultiInputPolicy
@@ -188,7 +188,7 @@ class BaseAlgorithm(ABC):
 
             if isinstance(self.action_space, spaces.Box):
                 assert np.all(
-                    np.isfinite(np.array([self.action_space.low, self.action_space.high]))
+                    np.isfinite(np.array([self.action_space.low, self.action_space.high])),
                 ), "Continuous action space must have a finite lower and upper bound"
 
     @staticmethod
@@ -227,7 +227,7 @@ class BaseAlgorithm(ABC):
                     )
             else:
                 wrap_with_vectranspose = is_image_space(env.observation_space) and not is_image_space_channels_first(
-                    env.observation_space
+                    env.observation_space,
                 )
 
             if wrap_with_vectranspose:
@@ -618,7 +618,7 @@ class BaseAlgorithm(ABC):
         if exact_match and updated_objects != objects_needing_update:
             raise ValueError(
                 "Names of parameters do not match agents' parameters: "
-                f"expected {objects_needing_update}, got {updated_objects}"
+                f"expected {objects_needing_update}, got {updated_objects}",
             )
 
     @classmethod
@@ -680,7 +680,7 @@ class BaseAlgorithm(ABC):
         if "policy_kwargs" in kwargs and kwargs["policy_kwargs"] != data["policy_kwargs"]:
             raise ValueError(
                 f"The specified policy kwargs do not equal the stored policy kwargs."
-                f"Stored kwargs: {data['policy_kwargs']}, specified kwargs: {kwargs['policy_kwargs']}"
+                f"Stored kwargs: {data['policy_kwargs']}, specified kwargs: {kwargs['policy_kwargs']}",
             )
 
         if "observation_space" not in data or "action_space" not in data:
@@ -731,7 +731,7 @@ class BaseAlgorithm(ABC):
                     "again to avoid issues in the future "
                     "(see https://github.com/DLR-RM/stable-baselines3/issues/1233 for more info). "
                     f"Original error: {e} \n"
-                    "Note: the model should still work fine, this only a warning."
+                    "Note: the model should still work fine, this only a warning.",
                 )
             else:
                 raise e

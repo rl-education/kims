@@ -46,7 +46,7 @@ class SyncVectorEnv(VectorEnv):
 
         self._check_observation_spaces()
         self.observations = create_empty_array(
-            self.single_observation_space, n=self.num_envs, fn=np.zeros
+            self.single_observation_space, n=self.num_envs, fn=np.zeros,
         )
         self._rewards = np.zeros((self.num_envs,), dtype=np.float64)
         self._dones = np.zeros((self.num_envs,), dtype=np.bool_)
@@ -69,7 +69,7 @@ class SyncVectorEnv(VectorEnv):
             observation = env.reset()
             observations.append(observation)
         self.observations = concatenate(
-            observations, self.observations, self.single_observation_space
+            observations, self.observations, self.single_observation_space,
         )
 
         return deepcopy(self.observations) if self.copy else self.observations
@@ -86,7 +86,7 @@ class SyncVectorEnv(VectorEnv):
             observations.append(observation)
             infos.append(info)
         self.observations = concatenate(
-            observations, self.observations, self.single_observation_space
+            observations, self.observations, self.single_observation_space,
         )
 
         return (
@@ -109,5 +109,5 @@ class SyncVectorEnv(VectorEnv):
             "Some environments have an observation space "
             "different from `{0}`. In order to batch observations, the "
             "observation spaces from all environments must be "
-            "equal.".format(self.single_observation_space)
+            "equal.".format(self.single_observation_space),
         )

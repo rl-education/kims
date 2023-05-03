@@ -56,25 +56,25 @@ class Car:
             fixtures=[
                 fixtureDef(
                     shape=polygonShape(
-                        vertices=[(x * SIZE, y * SIZE) for x, y in HULL_POLY1]
+                        vertices=[(x * SIZE, y * SIZE) for x, y in HULL_POLY1],
                     ),
                     density=1.0,
                 ),
                 fixtureDef(
                     shape=polygonShape(
-                        vertices=[(x * SIZE, y * SIZE) for x, y in HULL_POLY2]
+                        vertices=[(x * SIZE, y * SIZE) for x, y in HULL_POLY2],
                     ),
                     density=1.0,
                 ),
                 fixtureDef(
                     shape=polygonShape(
-                        vertices=[(x * SIZE, y * SIZE) for x, y in HULL_POLY3]
+                        vertices=[(x * SIZE, y * SIZE) for x, y in HULL_POLY3],
                     ),
                     density=1.0,
                 ),
                 fixtureDef(
                     shape=polygonShape(
-                        vertices=[(x * SIZE, y * SIZE) for x, y in HULL_POLY4]
+                        vertices=[(x * SIZE, y * SIZE) for x, y in HULL_POLY4],
                     ),
                     density=1.0,
                 ),
@@ -99,7 +99,7 @@ class Car:
                         vertices=[
                             (x * front_k * SIZE, y * front_k * SIZE)
                             for x, y in WHEEL_POLY
-                        ]
+                        ],
                     ),
                     density=0.1,
                     categoryBits=0x0020,
@@ -176,7 +176,7 @@ class Car:
             friction_limit = FRICTION_LIMIT * 0.6  # Grass friction if no tile
             for tile in w.tiles:
                 friction_limit = max(
-                    friction_limit, FRICTION_LIMIT * tile.road_friction
+                    friction_limit, FRICTION_LIMIT * tile.road_friction,
                 )
                 grass = False
 
@@ -236,7 +236,7 @@ class Car:
                     w.skid_start = w.position
                 else:
                     w.skid_particle = self._create_particle(
-                        w.skid_start, w.position, grass
+                        w.skid_start, w.position, grass,
                     )
                     w.skid_start = None
             else:

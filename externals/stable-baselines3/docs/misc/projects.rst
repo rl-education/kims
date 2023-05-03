@@ -13,7 +13,7 @@ An open-source Gym-compatible environment specifically tailored for developing R
 
 | Authors: Parth Kothari, Christian Perone, Luca Bergamini, Alexandre Alahi, Peter Ondruska
 | Github: https://github.com/lyft/l5kit
-| Paper: https://arxiv.org/abs/2111.06889 
+| Paper: https://arxiv.org/abs/2111.06889
 
 
 RL Reach
@@ -40,7 +40,7 @@ It was the starting point of Stable-Baselines3.
 Furuta Pendulum Robot
 ---------------------
 
-Everything you need to build and train a rotary inverted pendulum, also know as a furuta pendulum! This makes use of gSDE listed above.   
+Everything you need to build and train a rotary inverted pendulum, also know as a furuta pendulum! This makes use of gSDE listed above.
 The Github repository contains code, CAD files and a bill of materials for you to build the robot. You can watch `a video overview of the project here <https://www.youtube.com/watch?v=Y6FVBbqjR40>`_.
 
 | Authors: Armand du Parc Locmaria, Pierre Fabre

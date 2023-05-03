@@ -11,8 +11,8 @@ try:
 except ImportError as e:
     raise error.DependencyNotInstalled(
         "{}. (HINT: you need to install mujoco_py, and also perform the setup instructions here: https://github.com/openai/mujoco-py/.)".format(
-            e
-        )
+            e,
+        ),
     )
 
 DEFAULT_SIZE = 500
@@ -47,15 +47,15 @@ class RobotEnv(gym.GoalEnv):
         self.observation_space = spaces.Dict(
             dict(
                 desired_goal=spaces.Box(
-                    -np.inf, np.inf, shape=obs["achieved_goal"].shape, dtype="float32"
+                    -np.inf, np.inf, shape=obs["achieved_goal"].shape, dtype="float32",
                 ),
                 achieved_goal=spaces.Box(
-                    -np.inf, np.inf, shape=obs["achieved_goal"].shape, dtype="float32"
+                    -np.inf, np.inf, shape=obs["achieved_goal"].shape, dtype="float32",
                 ),
                 observation=spaces.Box(
-                    -np.inf, np.inf, shape=obs["observation"].shape, dtype="float32"
+                    -np.inf, np.inf, shape=obs["observation"].shape, dtype="float32",
                 ),
-            )
+            ),
         )
 
     @property

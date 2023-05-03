@@ -36,7 +36,7 @@ def _check_image_input(observation_space: spaces.Box, key: str = "") -> None:
             f"It seems that your observation {key} is an image but the `dtype` "
             "of your observation_space is not `np.uint8`. "
             "If your observation is not an image, we recommend you to flatten the observation "
-            "to have only a 1D vector"
+            "to have only a 1D vector",
         )
 
     if np.any(observation_space.low != 0) or np.any(observation_space.high != 255):
@@ -44,7 +44,7 @@ def _check_image_input(observation_space: spaces.Box, key: str = "") -> None:
             f"It seems that your observation space {key} is an image but the "
             "upper and lower bounds are not in [0, 255]. "
             "Generally, CNN policies assume observations are within that range, "
-            "so you may encounter an issue if the observation values are not."
+            "so you may encounter an issue if the observation values are not.",
         )
 
 
@@ -75,21 +75,21 @@ def _check_obs(
     """
     if not isinstance(observation_space, spaces.Tuple):
         assert not isinstance(
-            obs, tuple
+            obs, tuple,
         ), f"The observation returned by the `{method_name}()` method should be a single value, not a tuple"
 
     # The check for a GoalEnv is done by the base class
     if isinstance(observation_space, spaces.Discrete):
         assert isinstance(
-            obs, int
+            obs, int,
         ), f"The observation returned by `{method_name}()` method must be an int"
     elif _is_numpy_array_space(observation_space):
         assert isinstance(
-            obs, np.ndarray
+            obs, np.ndarray,
         ), f"The observation returned by `{method_name}()` method must be a numpy array"
 
     assert observation_space.contains(
-        obs
+        obs,
     ), f"The observation returned by the `{method_name}()` method does not match the given observation space"
 
 
@@ -109,16 +109,16 @@ def _check_box_obs(observation_space: spaces.Box, key: str = "") -> None:
         warnings.warn(
             f"Your observation {key} has an unconventional shape (neither an image, nor a 1D vector). "
             "We recommend you to flatten the observation "
-            "to have only a 1D vector or use a custom policy to properly process the data."
+            "to have only a 1D vector or use a custom policy to properly process the data.",
         )
 
     if np.any(np.equal(observation_space.low, -np.inf)):
         warnings.warn(
-            "Agent's minimum observation space value is -infinity. This is probably too low."
+            "Agent's minimum observation space value is -infinity. This is probably too low.",
         )
     if np.any(np.equal(observation_space.high, np.inf)):
         warnings.warn(
-            "Agent's maxmimum observation space value is infinity. This is probably too high"
+            "Agent's maxmimum observation space value is infinity. This is probably too high",
         )
     if np.any(np.equal(observation_space.low, observation_space.high)):
         warnings.warn("Agent's maximum and minimum observation space values are equal")
@@ -137,11 +137,11 @@ def _check_box_obs(observation_space: spaces.Box, key: str = "") -> None:
 def _check_box_action(action_space: spaces.Box):
     if np.any(np.equal(action_space.low, -np.inf)):
         warnings.warn(
-            "Agent's minimum action space value is -infinity. This is probably too low."
+            "Agent's minimum action space value is -infinity. This is probably too low.",
         )
     if np.any(np.equal(action_space.high, np.inf)):
         warnings.warn(
-            "Agent's maxmimum action space value is infinity. This is probably too high"
+            "Agent's maxmimum action space value is infinity. This is probably too high",
         )
     if np.any(np.equal(action_space.low, action_space.high)):
         warnings.warn("Agent's maximum and minimum action space values are equal")
@@ -161,12 +161,12 @@ def _check_normalized_action(action_space: spaces.Box):
     ):
         warnings.warn(
             "We recommend you to use a symmetric and normalized Box action space (range=[-1, 1]) "
-            "cf https://stable-baselines3.readthedocs.io/en/master/guide/rl_tips.html"
+            "cf https://stable-baselines3.readthedocs.io/en/master/guide/rl_tips.html",
         )
 
 
 def _check_returned_values(
-    env: gym.Env, observation_space: spaces.Space, action_space: spaces.Space
+    env: gym.Env, observation_space: spaces.Space, action_space: spaces.Space,
 ) -> None:
     """
     Check the returned values by the env when calling `.reset()` or `.step()` methods.
@@ -176,7 +176,7 @@ def _check_returned_values(
 
     if isinstance(observation_space, spaces.Dict):
         assert isinstance(
-            obs, dict
+            obs, dict,
         ), "The observation returned by `reset()` must be a dictionary"
         for key in observation_space.spaces.keys():
             try:
@@ -199,7 +199,7 @@ def _check_returned_values(
 
     if isinstance(observation_space, spaces.Dict):
         assert isinstance(
-            obs, dict
+            obs, dict,
         ), "The observation returned by `step()` must be a dictionary"
         for key in observation_space.spaces.keys():
             try:
@@ -212,17 +212,17 @@ def _check_returned_values(
 
     # We also allow int because the reward will be cast to float
     assert isinstance(
-        reward, (float, int, np.float32)
+        reward, (float, int, np.float32),
     ), "The reward returned by `step()` must be a float"
     assert isinstance(done, bool), "The `done` signal must be a boolean"
     assert isinstance(
-        info, dict
+        info, dict,
     ), "The `info` returned by `step()` must be a python dictionary"
 
     if isinstance(env, gym.GoalEnv):
         # For a GoalEnv, the keys are checked at reset
         assert reward == env.compute_reward(
-            obs["achieved_goal"], obs["desired_goal"], info
+            obs["achieved_goal"], obs["desired_goal"], info,
         )
 
 
@@ -251,7 +251,7 @@ def _check_spaces(env: gym.Env) -> None:
 
 # Check render cannot be covered by CI
 def _check_render(
-    env: gym.Env, warn: bool = True, headless: bool = False
+    env: gym.Env, warn: bool = True, headless: bool = False,
 ) -> None:  # pragma: no cover
     """
     Check the declared render modes and the `render()`/`close()`
@@ -267,7 +267,7 @@ def _check_render(
             warnings.warn(
                 "No render modes was declared in the environment "
                 " (env.metadata['render.modes'] is None or not defined), "
-                "you may have trouble when calling `.render()`"
+                "you may have trouble when calling `.render()`",
             )
 
     else:
@@ -295,7 +295,7 @@ def check_env(env: gym.Env, warn: bool = True, skip_render_check: bool = True) -
         True by default (useful for the CI)
     """
     assert isinstance(
-        env, gym.Env
+        env, gym.Env,
     ), "Your environment must inherit from the gym.Env class cf https://github.com/openai/gym/blob/master/gym/core.py"
 
     # ============= Check the spaces (observation and action) ================

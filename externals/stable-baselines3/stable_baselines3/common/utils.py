@@ -265,7 +265,7 @@ def is_vectorized_box_observation(observation: np.ndarray, observation_space: sp
         raise ValueError(
             f"Error: Unexpected observation shape {observation.shape} for "
             + f"Box environment, please use {observation_space.shape} "
-            + "or (n_env, {}) for the observation shape.".format(", ".join(map(str, observation_space.shape)))
+            + "or (n_env, {}) for the observation shape.".format(", ".join(map(str, observation_space.shape))),
         )
 
 
@@ -285,7 +285,7 @@ def is_vectorized_discrete_observation(observation: Union[int, np.ndarray], obse
     else:
         raise ValueError(
             f"Error: Unexpected observation shape {observation.shape} for "
-            + "Discrete environment, please use () or (n_env,) for the observation shape."
+            + "Discrete environment, please use () or (n_env,) for the observation shape.",
         )
 
 
@@ -306,7 +306,7 @@ def is_vectorized_multidiscrete_observation(observation: np.ndarray, observation
         raise ValueError(
             f"Error: Unexpected observation shape {observation.shape} for MultiDiscrete "
             + f"environment, please use ({len(observation_space.nvec)},) or "
-            + f"(n_env, {len(observation_space.nvec)}) for the observation shape."
+            + f"(n_env, {len(observation_space.nvec)}) for the observation shape.",
         )
 
 
@@ -327,7 +327,7 @@ def is_vectorized_multibinary_observation(observation: np.ndarray, observation_s
         raise ValueError(
             f"Error: Unexpected observation shape {observation.shape} for MultiBinary "
             + f"environment, please use {observation_space.shape} or "
-            + f"(n_env, {observation_space.n}) for the observation shape."
+            + f"(n_env, {observation_space.n}) for the observation shape.",
         )
 
 
@@ -371,7 +371,7 @@ def is_vectorized_dict_observation(observation: np.ndarray, observation_space: s
         raise ValueError(
             f"There seems to be a mix of vectorized and non-vectorized observations. "
             f"Unexpected observation shape {observation[key].shape} for key {key} "
-            f"of type {observation_space.spaces[key]}. {error_msg}"
+            f"of type {observation_space.spaces[key]}. {error_msg}",
         )
 
 
@@ -471,7 +471,7 @@ def polyak_update(
 
 
 def obs_as_tensor(
-    obs: Union[np.ndarray, Dict[Union[str, int], np.ndarray]], device: th.device
+    obs: Union[np.ndarray, Dict[Union[str, int], np.ndarray]], device: th.device,
 ) -> Union[th.Tensor, TensorDict]:
     """
     Moves the observation to the given device.
@@ -512,7 +512,7 @@ def should_collect_more_steps(
     else:
         raise ValueError(
             "The unit of the `train_freq` must be either TrainFrequencyUnit.STEP "
-            f"or TrainFrequencyUnit.EPISODE not '{train_freq.unit}'!"
+            f"or TrainFrequencyUnit.EPISODE not '{train_freq.unit}'!",
         )
 
 

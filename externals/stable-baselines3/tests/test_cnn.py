@@ -71,7 +71,7 @@ def test_cnn(tmp_path, model_class, share_features_extractor):
 def test_vec_transpose_skip(tmp_path, model_class):
     # Fake grayscale with frameskip
     env = FakeImageEnv(
-        screen_height=41, screen_width=40, n_channels=10, discrete=model_class not in {SAC, TD3}, channel_first=True
+        screen_height=41, screen_width=40, n_channels=10, discrete=model_class not in {SAC, TD3}, channel_first=True,
     )
     env = DummyVecEnv([lambda: env])
     # Stack 5 frames so the observation is now (50, 40, 40) but the env is still channel first

@@ -18,7 +18,7 @@ class HumanoidStandupEnv(mujoco_env.MujocoEnv, utils.EzPickle):
                 data.cvel.flat,
                 data.qfrc_actuator.flat,
                 data.cfrc_ext.flat,
-            ]
+            ],
         )
 
     def step(self, a):

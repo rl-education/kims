@@ -31,7 +31,7 @@ def _check_image_input(observation_space: spaces.Box, key: str = "") -> None:
             f"It seems that your observation {key} is an image but its `dtype` "
             f"is ({observation_space.dtype}) whereas it has to be `np.uint8`. "
             "If your observation is not an image, we recommend you to flatten the observation "
-            "to have only a 1D vector"
+            "to have only a 1D vector",
         )
 
     if np.any(observation_space.low != 0) or np.any(observation_space.high != 255):
@@ -39,7 +39,7 @@ def _check_image_input(observation_space: spaces.Box, key: str = "") -> None:
             f"It seems that your observation space {key} is an image but the "
             "upper and lower bounds are not in [0, 255]. "
             "Because the CNN policy normalize automatically the observation "
-            "you may encounter issue if the values are not in that range."
+            "you may encounter issue if the values are not in that range.",
         )
 
     non_channel_idx = 0
@@ -51,7 +51,7 @@ def _check_image_input(observation_space: spaces.Box, key: str = "") -> None:
         warnings.warn(
             "The minimal resolution for an image is 36x36 for the default `CnnPolicy`. "
             "You might need to use a custom features extractor "
-            "cf. https://stable-baselines3.readthedocs.io/en/master/guide/custom_policy.html"
+            "cf. https://stable-baselines3.readthedocs.io/en/master/guide/custom_policy.html",
         )
 
 
@@ -69,7 +69,7 @@ def _check_unsupported_spaces(env: gym.Env, observation_space: spaces.Space, act
                 "(Dict spaces inside Dict space). "
                 "You should flatten it to have only one level of keys."
                 "For example, `dict(space1=dict(space2=Box(), space3=Box()), spaces4=Discrete())` "
-                "is not supported but `dict(space2=Box(), spaces3=Box(), spaces4=Discrete())` is."
+                "is not supported but `dict(space2=Box(), spaces3=Box(), spaces4=Discrete())` is.",
             )
 
     if isinstance(observation_space, spaces.Tuple):
@@ -78,14 +78,14 @@ def _check_unsupported_spaces(env: gym.Env, observation_space: spaces.Space, act
             "this is currently not supported by Stable Baselines3. "
             "However, you can convert it to a Dict observation space "
             "(cf. https://github.com/openai/gym/blob/master/gym/spaces/dict.py). "
-            "which is supported by SB3."
+            "which is supported by SB3.",
         )
 
     if not _is_numpy_array_space(action_space):
         warnings.warn(
             "The action space is not based off a numpy array. Typically this means it's either a Dict or Tuple space. "
             "This type of action space is currently not supported by Stable Baselines 3. You should try to flatten the "
-            "action using a wrapper."
+            "action using a wrapper.",
         )
 
 
@@ -122,7 +122,7 @@ def _check_goal_env_obs(obs: dict, observation_space: spaces.Dict, method_name: 
             raise AssertionError(
                 f"The observation returned by the `{method_name}()` method of a goal-conditioned env requires the '{key}' "
                 "key to be part of the observation dictionary. "
-                f"Current keys are {list(observation_space.spaces.keys())}"
+                f"Current keys are {list(observation_space.spaces.keys())}",
             )
 
 
@@ -138,7 +138,7 @@ def _check_goal_env_compute_reward(
     """
     achieved_goal, desired_goal = obs["achieved_goal"], obs["desired_goal"]
     assert reward == env.compute_reward(  # type: ignore[attr-defined]
-        achieved_goal, desired_goal, info
+        achieved_goal, desired_goal, info,
     ), "The reward was not computed with `compute_reward()`"
 
     achieved_goal, desired_goal = np.array(achieved_goal), np.array(desired_goal)
@@ -160,7 +160,7 @@ def _check_obs(obs: Union[tuple, dict, np.ndarray, int], observation_space: spac
     """
     if not isinstance(observation_space, spaces.Tuple):
         assert not isinstance(
-            obs, tuple
+            obs, tuple,
         ), f"The observation returned by the `{method_name}()` method should be a single value, not a tuple"
 
     # The check for a GoalEnv is done by the base class
@@ -193,7 +193,7 @@ def _check_obs(obs: Union[tuple, dict, np.ndarray, int], observation_space: spac
             )
 
     assert observation_space.contains(
-        obs
+        obs,
     ), f"The observation returned by the `{method_name}()` method does not match the given observation space"
 
 
@@ -213,7 +213,7 @@ def _check_box_obs(observation_space: spaces.Box, key: str = "") -> None:
         warnings.warn(
             f"Your observation {key} has an unconventional shape (neither an image, nor a 1D vector). "
             "We recommend you to flatten the observation "
-            "to have only a 1D vector or use a custom policy to properly process the data."
+            "to have only a 1D vector or use a custom policy to properly process the data.",
         )
 
 
@@ -234,7 +234,7 @@ def _check_returned_values(env: gym.Env, observation_space: spaces.Space, action
         if not obs.keys() == observation_space.spaces.keys():
             raise AssertionError(
                 "The observation keys returned by `reset()` must match the observation "
-                f"space keys: {obs.keys()} != {observation_space.spaces.keys()}"
+                f"space keys: {obs.keys()} != {observation_space.spaces.keys()}",
             )
 
         for key in observation_space.spaces.keys():
@@ -265,7 +265,7 @@ def _check_returned_values(env: gym.Env, observation_space: spaces.Space, action
         if not obs.keys() == observation_space.spaces.keys():
             raise AssertionError(
                 "The observation keys returned by `step()` must match the observation "
-                f"space keys: {obs.keys()} != {observation_space.spaces.keys()}"
+                f"space keys: {obs.keys()} != {observation_space.spaces.keys()}",
             )
 
         for key in observation_space.spaces.keys():
@@ -304,7 +304,7 @@ def _check_spaces(env: gym.Env) -> None:
 
     if _is_goal_env(env):
         assert isinstance(
-            env.observation_space, spaces.Dict
+            env.observation_space, spaces.Dict,
         ), "Goal conditioned envs (previously gym.GoalEnv) require the observation space to be gym.spaces.Dict"
 
 
@@ -325,7 +325,7 @@ def _check_render(env: gym.Env, warn: bool = True, headless: bool = False) -> No
             warnings.warn(
                 "No render modes was declared in the environment "
                 " (env.metadata['render.modes'] is None or not defined), "
-                "you may have trouble when calling `.render()`"
+                "you may have trouble when calling `.render()`",
             )
 
     else:
@@ -355,7 +355,7 @@ def check_env(env: gym.Env, warn: bool = True, skip_render_check: bool = True) -
         True by default (useful for the CI)
     """
     assert isinstance(
-        env, gym.Env
+        env, gym.Env,
     ), "Your environment must inherit from the gym.Env class cf https://github.com/openai/gym/blob/master/gym/core.py"
 
     # ============= Check the spaces (observation and action) ================
@@ -383,17 +383,17 @@ def check_env(env: gym.Env, warn: bool = True, skip_render_check: bool = True) -
         ):
             warnings.warn(
                 "We recommend you to use a symmetric and normalized Box action space (range=[-1, 1]) "
-                "cf https://stable-baselines3.readthedocs.io/en/master/guide/rl_tips.html"
+                "cf https://stable-baselines3.readthedocs.io/en/master/guide/rl_tips.html",
             )
 
         if isinstance(action_space, spaces.Box):
             assert np.all(
-                np.isfinite(np.array([action_space.low, action_space.high]))
+                np.isfinite(np.array([action_space.low, action_space.high])),
             ), "Continuous action space must have a finite lower and upper bound"
 
         if isinstance(action_space, spaces.Box) and action_space.dtype != np.dtype(np.float32):
             warnings.warn(
-                f"Your action space has dtype {action_space.dtype}, we recommend using np.float32 to avoid cast errors."
+                f"Your action space has dtype {action_space.dtype}, we recommend using np.float32 to avoid cast errors.",
             )
 
     # ============ Check the returned values ===============

@@ -10,8 +10,8 @@ try:
 except ImportError as e:
     raise error.DependencyNotInstalled(
         "{}. (HINT: you need to install mujoco_py, and also perform the setup instructions here: https://github.com/openai/mujoco-py/.)".format(
-            e
-        )
+            e,
+        ),
     )
 
 
@@ -196,7 +196,7 @@ class ManipulateEnv(hand_env.HandEnv):
                 pass
             else:
                 raise error.Error(
-                    'Unknown target_rotation option "{}".'.format(self.target_rotation)
+                    'Unknown target_rotation option "{}".'.format(self.target_rotation),
                 )
 
         # Randomize initial position.
@@ -230,7 +230,7 @@ class ManipulateEnv(hand_env.HandEnv):
         if self.target_position == "random":
             assert self.target_position_range.shape == (3, 2)
             offset = self.np_random.uniform(
-                self.target_position_range[:, 0], self.target_position_range[:, 1]
+                self.target_position_range[:, 0], self.target_position_range[:, 1],
             )
             assert offset.shape == (3,)
             target_pos = self.sim.data.get_joint_qpos("object:joint")[:3] + offset
@@ -238,7 +238,7 @@ class ManipulateEnv(hand_env.HandEnv):
             target_pos = self.sim.data.get_joint_qpos("object:joint")[:3]
         else:
             raise error.Error(
-                'Unknown target_position option "{}".'.format(self.target_position)
+                'Unknown target_position option "{}".'.format(self.target_position),
             )
         assert target_pos is not None
         assert target_pos.shape == (3,)
@@ -265,7 +265,7 @@ class ManipulateEnv(hand_env.HandEnv):
             target_quat = self.sim.data.get_joint_qpos("object:joint")
         else:
             raise error.Error(
-                'Unknown target_rotation option "{}".'.format(self.target_rotation)
+                'Unknown target_rotation option "{}".'.format(self.target_rotation),
             )
         assert target_quat is not None
         assert target_quat.shape == (4,)
@@ -297,7 +297,7 @@ class ManipulateEnv(hand_env.HandEnv):
             self._get_achieved_goal().ravel()
         )  # this contains the object position + rotation
         observation = np.concatenate(
-            [robot_qpos, robot_qvel, object_qvel, achieved_goal]
+            [robot_qpos, robot_qvel, object_qvel, achieved_goal],
         )
         return {
             "observation": observation.copy(),
@@ -308,7 +308,7 @@ class ManipulateEnv(hand_env.HandEnv):
 
 class HandBlockEnv(ManipulateEnv, utils.EzPickle):
     def __init__(
-        self, target_position="random", target_rotation="xyz", reward_type="sparse"
+        self, target_position="random", target_rotation="xyz", reward_type="sparse",
     ):
         utils.EzPickle.__init__(self, target_position, target_rotation, reward_type)
         ManipulateEnv.__init__(
@@ -323,7 +323,7 @@ class HandBlockEnv(ManipulateEnv, utils.EzPickle):
 
 class HandEggEnv(ManipulateEnv, utils.EzPickle):
     def __init__(
-        self, target_position="random", target_rotation="xyz", reward_type="sparse"
+        self, target_position="random", target_rotation="xyz", reward_type="sparse",
     ):
         utils.EzPickle.__init__(self, target_position, target_rotation, reward_type)
         ManipulateEnv.__init__(
@@ -338,7 +338,7 @@ class HandEggEnv(ManipulateEnv, utils.EzPickle):
 
 class HandPenEnv(ManipulateEnv, utils.EzPickle):
     def __init__(
-        self, target_position="random", target_rotation="xyz", reward_type="sparse"
+        self, target_position="random", target_rotation="xyz", reward_type="sparse",
     ):
         utils.EzPickle.__init__(self, target_position, target_rotation, reward_type)
         ManipulateEnv.__init__(

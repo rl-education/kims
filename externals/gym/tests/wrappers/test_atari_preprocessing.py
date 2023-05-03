@@ -16,10 +16,10 @@ def test_atari_preprocessing_grayscale(env_fn):
 
     env1 = env_fn()
     env2 = AtariPreprocessing(
-        env_fn(), screen_size=84, grayscale_obs=True, frame_skip=1, noop_max=0
+        env_fn(), screen_size=84, grayscale_obs=True, frame_skip=1, noop_max=0,
     )
     env3 = AtariPreprocessing(
-        env_fn(), screen_size=84, grayscale_obs=False, frame_skip=1, noop_max=0
+        env_fn(), screen_size=84, grayscale_obs=False, frame_skip=1, noop_max=0,
     )
     env4 = AtariPreprocessing(
         env_fn(),

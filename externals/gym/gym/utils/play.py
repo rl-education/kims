@@ -173,7 +173,7 @@ class PlayPlot(object):
             if plot is not None:
                 plot.remove()
             self.cur_plot[i] = self.ax[i].scatter(
-                range(xmin, xmax), list(self.data[i]), c="blue"
+                range(xmin, xmax), list(self.data[i]), c="blue",
             )
             self.ax[i].set_xlim(xmin, xmax)
         plt.pause(0.000001)

@@ -126,12 +126,12 @@ class TaxiEnv(discrete.DiscreteEnv):
                                 else:  # dropoff at wrong location
                                     reward = -10
                             new_state = self.encode(
-                                new_row, new_col, new_pass_idx, dest_idx
+                                new_row, new_col, new_pass_idx, dest_idx,
                             )
                             P[state][action].append((1.0, new_state, reward, done))
         initial_state_distrib /= initial_state_distrib.sum()
         discrete.DiscreteEnv.__init__(
-            self, num_states, num_actions, P, initial_state_distrib
+            self, num_states, num_actions, P, initial_state_distrib,
         )
 
     def encode(self, taxi_row, taxi_col, pass_loc, dest_idx):
@@ -169,15 +169,15 @@ class TaxiEnv(discrete.DiscreteEnv):
 
         if pass_idx < 4:
             out[1 + taxi_row][2 * taxi_col + 1] = utils.colorize(
-                out[1 + taxi_row][2 * taxi_col + 1], "yellow", highlight=True
+                out[1 + taxi_row][2 * taxi_col + 1], "yellow", highlight=True,
             )
             pi, pj = self.locs[pass_idx]
             out[1 + pi][2 * pj + 1] = utils.colorize(
-                out[1 + pi][2 * pj + 1], "blue", bold=True
+                out[1 + pi][2 * pj + 1], "blue", bold=True,
             )
         else:  # passenger in taxi
             out[1 + taxi_row][2 * taxi_col + 1] = utils.colorize(
-                ul(out[1 + taxi_row][2 * taxi_col + 1]), "green", highlight=True
+                ul(out[1 + taxi_row][2 * taxi_col + 1]), "green", highlight=True,
             )
 
         di, dj = self.locs[dest_idx]
@@ -188,8 +188,8 @@ class TaxiEnv(discrete.DiscreteEnv):
                 "  ({})\n".format(
                     ["South", "North", "East", "West", "Pickup", "Dropoff"][
                         self.lastaction
-                    ]
-                )
+                    ],
+                ),
             )
         else:
             outfile.write("\n")

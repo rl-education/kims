@@ -20,7 +20,7 @@ class VecTransposeImage(VecEnvWrapper):
 
     def __init__(self, venv: VecEnv, skip: bool = False):
         assert is_image_space(venv.observation_space) or isinstance(
-            venv.observation_space, spaces.dict.Dict
+            venv.observation_space, spaces.dict.Dict,
         ), "The observation space must be an image or dictionary observation space"
 
         self.skip = skip
@@ -53,7 +53,7 @@ class VecTransposeImage(VecEnvWrapper):
         # Sanity checks
         assert is_image_space(observation_space), "The observation space must be an image"
         assert not is_image_space_channels_first(
-            observation_space
+            observation_space,
         ), f"The observation space {key} must follow the channel last convention"
         height, width, channels = observation_space.shape
         new_shape = (channels, height, width)

@@ -113,12 +113,12 @@ def test_save_load(tmp_path, model_class):
             if k == last_key:
                 # Should be same as before
                 assert th.allclose(
-                    original_params[object_name][k], new_params[object_name][k]
+                    original_params[object_name][k], new_params[object_name][k],
                 ), "Parameter changed despite not included in the loaded parameters."
             else:
                 # Should be different
                 assert not th.allclose(
-                    original_params[object_name][k], new_params[object_name][k]
+                    original_params[object_name][k], new_params[object_name][k],
                 ), "Parameters did not change as expected."
 
     params = new_params
@@ -149,7 +149,7 @@ def test_save_load(tmp_path, model_class):
             for key in params[object_name]:
                 assert new_params[object_name][key].device.type == get_device(device).type
                 assert th.allclose(
-                    params[object_name][key].to("cpu"), new_params[object_name][key].to("cpu")
+                    params[object_name][key].to("cpu"), new_params[object_name][key].to("cpu"),
                 ), "Model parameters not the same after save and load."
 
         # check if model still selects the same actions
@@ -352,7 +352,7 @@ def test_save_load_replay_buffer(tmp_path, model_class):
     path = pathlib.Path(tmp_path / "logs/replay_buffer.pkl")
     path.parent.mkdir(exist_ok=True, parents=True)  # to not raise a warning
     model = model_class(
-        "MlpPolicy", select_env(model_class), buffer_size=1000, policy_kwargs=dict(net_arch=[64]), learning_starts=200
+        "MlpPolicy", select_env(model_class), buffer_size=1000, policy_kwargs=dict(net_arch=[64]), learning_starts=200,
     )
     model.learn(300)
     old_replay_buffer = deepcopy(model.replay_buffer)
@@ -443,7 +443,7 @@ def test_save_load_policy(tmp_path, model_class, policy_str, use_sde):
             # Avoid memory error when using replay buffer
             # Reduce the size of the features
             kwargs = dict(
-                buffer_size=250, learning_starts=100, policy_kwargs=dict(features_extractor_kwargs=dict(features_dim=32))
+                buffer_size=250, learning_starts=100, policy_kwargs=dict(features_extractor_kwargs=dict(features_dim=32)),
             )
         env = FakeImageEnv(screen_height=40, screen_width=40, n_channels=2, discrete=model_class == DQN)
 

@@ -112,7 +112,7 @@ class BaseBuffer(ABC):
 
     @abstractmethod
     def _get_samples(
-        self, batch_inds: np.ndarray, env: Optional[VecNormalize] = None
+        self, batch_inds: np.ndarray, env: Optional[VecNormalize] = None,
     ) -> Union[ReplayBufferSamples, RolloutBufferSamples]:
         """
         :param batch_inds:
@@ -195,7 +195,7 @@ class ReplayBuffer(BaseBuffer):
         if optimize_memory_usage and handle_timeout_termination:
             raise ValueError(
                 "ReplayBuffer does not support optimize_memory_usage = True "
-                "and handle_timeout_termination = True simultaneously."
+                "and handle_timeout_termination = True simultaneously.",
             )
         self.optimize_memory_usage = optimize_memory_usage
 
@@ -228,7 +228,7 @@ class ReplayBuffer(BaseBuffer):
                 mem_available /= 1e9
                 warnings.warn(
                     "This system does not have apparently enough memory to store the complete "
-                    f"replay buffer {total_memory_usage:.2f}GB > {mem_available:.2f}GB"
+                    f"replay buffer {total_memory_usage:.2f}GB > {mem_available:.2f}GB",
                 )
 
     def add(
@@ -563,7 +563,7 @@ class DictReplayBuffer(ReplayBuffer):
                 mem_available /= 1e9
                 warnings.warn(
                     "This system does not have apparently enough memory to store the complete "
-                    f"replay buffer {total_memory_usage:.2f}GB > {mem_available:.2f}GB"
+                    f"replay buffer {total_memory_usage:.2f}GB > {mem_available:.2f}GB",
                 )
 
     def add(
@@ -629,7 +629,7 @@ class DictReplayBuffer(ReplayBuffer):
         # Normalize if needed and remove extra dimension (we are using only one env for now)
         obs_ = self._normalize_obs({key: obs[batch_inds, env_indices, :] for key, obs in self.observations.items()}, env)
         next_obs_ = self._normalize_obs(
-            {key: obs[batch_inds, env_indices, :] for key, obs in self.next_observations.items()}, env
+            {key: obs[batch_inds, env_indices, :] for key, obs in self.next_observations.items()}, env,
         )
 
         # Convert to torch tensor
@@ -643,7 +643,7 @@ class DictReplayBuffer(ReplayBuffer):
             # Only use dones that are not due to timeouts
             # deactivated by default (timeouts is initialized as an array of False)
             dones=self.to_torch(self.dones[batch_inds, env_indices] * (1 - self.timeouts[batch_inds, env_indices])).reshape(
-                -1, 1
+                -1, 1,
             ),
             rewards=self.to_torch(self._normalize_reward(self.rewards[batch_inds, env_indices].reshape(-1, 1), env)),
         )

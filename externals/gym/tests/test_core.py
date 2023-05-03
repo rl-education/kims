@@ -33,7 +33,7 @@ class UnknownSpacesEnv(core.Env):
 
     def reset(self):
         self.observation_space = spaces.Box(
-            low=0, high=255, shape=(64, 64, 3), dtype=np.uint8
+            low=0, high=255, shape=(64, 64, 3), dtype=np.uint8,
         )
         self.action_space = spaces.Discrete(3)
         return self.observation_space.sample()  # Dummy observation
@@ -75,15 +75,15 @@ def test_env_instantiation():
 properties = [
     {
         "observation_space": spaces.Box(
-            low=0.0, high=1.0, shape=(64, 64, 3), dtype=np.float32
-        )
+            low=0.0, high=1.0, shape=(64, 64, 3), dtype=np.float32,
+        ),
     },
     {"action_space": spaces.Discrete(2)},
     {"reward_range": (-1.0, 1.0)},
     {"metadata": {"render.modes": ["human", "rgb_array"]}},
     {
         "observation_space": spaces.Box(
-            low=0.0, high=1.0, shape=(64, 64, 3), dtype=np.float32
+            low=0.0, high=1.0, shape=(64, 64, 3), dtype=np.float32,
         ),
         "action_space": spaces.Discrete(2),
     },

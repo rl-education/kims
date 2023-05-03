@@ -19,7 +19,7 @@ class PendulumEnv(gym.Env):
 
         high = np.array([1.0, 1.0, self.max_speed], dtype=np.float32)
         self.action_space = spaces.Box(
-            low=-self.max_torque, high=self.max_torque, shape=(1,), dtype=np.float32
+            low=-self.max_torque, high=self.max_torque, shape=(1,), dtype=np.float32,
         )
         self.observation_space = spaces.Box(low=-high, high=high, dtype=np.float32)
 

@@ -167,7 +167,7 @@ def json_to_data(json_string: str, custom_objects: Optional[Dict[str, Any]] = No
                     f"Could not deserialize object {data_key}. "
                     "Consider using `custom_objects` argument to replace "
                     "this object.\n"
-                    f"Exception: {e}"
+                    f"Exception: {e}",
                 )
             else:
                 return_data[data_key] = deserialized_object

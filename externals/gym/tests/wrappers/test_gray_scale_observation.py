@@ -11,7 +11,7 @@ pytest.importorskip("cv2")
 
 
 @pytest.mark.parametrize(
-    "env_id", ["PongNoFrameskip-v0", "SpaceInvadersNoFrameskip-v0"]
+    "env_id", ["PongNoFrameskip-v0", "SpaceInvadersNoFrameskip-v0"],
 )
 @pytest.mark.parametrize("keep_dim", [True, False])
 def test_gray_scale_observation(env_id, keep_dim):

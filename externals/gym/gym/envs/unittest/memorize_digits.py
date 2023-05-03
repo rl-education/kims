@@ -63,7 +63,7 @@ class MemorizeDigits(gym.Env):
         self.seed()
         self.viewer = None
         self.observation_space = spaces.Box(
-            0, 255, (FIELD_H, FIELD_W, 3), dtype=np.uint8
+            0, 255, (FIELD_H, FIELD_W, 3), dtype=np.uint8,
         )
         self.action_space = spaces.Discrete(10)
         self.bogus_mnist = np.zeros((10, 6, 6), dtype=np.uint8)
@@ -84,7 +84,7 @@ class MemorizeDigits(gym.Env):
                 self.np_random.randint(low=0, high=255),
                 self.np_random.randint(low=0, high=255),
                 self.np_random.randint(low=0, high=255),
-            ]
+            ],
         ).astype("uint8")
 
     def reset(self):

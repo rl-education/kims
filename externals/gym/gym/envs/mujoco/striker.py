@@ -52,7 +52,7 @@ class StrikerEnv(mujoco_env.MujocoEnv, utils.EzPickle):
                 [
                     self.np_random.uniform(low=0.15, high=0.7, size=1),
                     self.np_random.uniform(low=0.1, high=1.0, size=1),
-                ]
+                ],
             )
             if np.linalg.norm(self.ball - self.goal) > 0.17:
                 break
@@ -63,7 +63,7 @@ class StrikerEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         angle = -np.arctan(diff[0] / (diff[1] + 1e-8))
         qpos[-1] = angle / 3.14
         qvel = self.init_qvel + self.np_random.uniform(
-            low=-0.1, high=0.1, size=self.model.nv
+            low=-0.1, high=0.1, size=self.model.nv,
         )
         qvel[7:] = 0
         self.set_state(qpos, qvel)
@@ -77,5 +77,5 @@ class StrikerEnv(mujoco_env.MujocoEnv, utils.EzPickle):
                 self.get_body_com("tips_arm"),
                 self.get_body_com("object"),
                 self.get_body_com("goal"),
-            ]
+            ],
         )

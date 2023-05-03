@@ -44,7 +44,7 @@ class DummyDictEnv(gym.Env):
                 "vec": spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32),
                 # Discrete obs
                 "discrete": spaces.Discrete(4),
-            }
+            },
         )
 
         # For checking consistency with normal MlpPolicy
@@ -53,7 +53,7 @@ class DummyDictEnv(gym.Env):
                 {
                     # Vector obs
                     "vec": spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32),
-                }
+                },
             )
 
         if nested_dict_obs:
@@ -231,7 +231,7 @@ def test_dict_vec_framestack(model_class, channel_last):
     use_discrete_actions = model_class not in [SAC, TD3, DDPG]
     channels_order = {"vec": None, "img": "last" if channel_last else "first"}
     env = DummyVecEnv(
-        [lambda: SimpleMultiObsEnv(random_start=True, discrete_actions=use_discrete_actions, channel_last=channel_last)]
+        [lambda: SimpleMultiObsEnv(random_start=True, discrete_actions=use_discrete_actions, channel_last=channel_last)],
     )
 
     env = VecFrameStack(env, n_stack=3, channels_order=channels_order)

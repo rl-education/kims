@@ -14,7 +14,7 @@ Gym includes numerous wrappers for environments that include preprocessing and v
 `FrameStack(env, num_stack, lz4_compress=False)` [text]
 * Needs review (including for good assertion messages and test coverage)
 
-`GrayScaleObservation(env)` [text] 
+`GrayScaleObservation(env)` [text]
 * Needs R/G/B channel argument added like supersuit wrapper
 * Needs review (including for good assertion messages and test coverage)
 * Needs CV2 dependency replaced with SuperSuit's way of doing full grey scaling: https://github.com/PettingZoo-Team/SuperSuit/blob/master/supersuit/utils/basic_transforms/color_reduction.py
@@ -128,12 +128,12 @@ Which will trigger the video recording at exactly every 100 environment steps (u
 Note that you may use exactly one trigger (i.e. `step_trigger` or `record_video_trigger`) at a time.
 
 There are two modes to end the video recording:
-1. Episodic mode. 
+1. Episodic mode.
     * By default `video_length=0` means the wrapper will record *episodic* videos: it will keep
     record the frames until the env returns `done=True`.
 2. Fixed-interval mode.
     * By tuning `video_length` such as `video_length=100`, the wrapper will record exactly 100 frames
-    for every videos the wrapper creates. 
+    for every videos the wrapper creates.
 
 Lastly the `name_prefix` allows you to customize the name of the videos.
 

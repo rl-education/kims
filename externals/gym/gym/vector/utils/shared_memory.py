@@ -44,7 +44,7 @@ def create_shared_memory(space, n=1, ctx=mp):
             "type `{0}`. Shared memory only supports "
             "default Gym spaces (e.g. `Box`, `Tuple`, "
             "`Dict`, etc...), and does not support custom "
-            "Gym spaces.".format(type(space))
+            "Gym spaces.".format(type(space)),
         )
 
 
@@ -66,7 +66,7 @@ def create_dict_shared_memory(space, n=1, ctx=mp):
         [
             (key, create_shared_memory(subspace, n=n, ctx=ctx))
             for (key, subspace) in space.spaces.items()
-        ]
+        ],
     )
 
 
@@ -109,13 +109,13 @@ def read_from_shared_memory(shared_memory, space, n=1):
             "type `{0}`. Shared memory only supports "
             "default Gym spaces (e.g. `Box`, `Tuple`, "
             "`Dict`, etc...), and does not support custom "
-            "Gym spaces.".format(type(space))
+            "Gym spaces.".format(type(space)),
         )
 
 
 def read_base_from_shared_memory(shared_memory, space, n=1):
     return np.frombuffer(shared_memory.get_obj(), dtype=space.dtype).reshape(
-        (n,) + space.shape
+        (n,) + space.shape,
     )
 
 
@@ -131,7 +131,7 @@ def read_dict_from_shared_memory(shared_memory, space, n=1):
         [
             (key, read_from_shared_memory(shared_memory[key], subspace, n=n))
             for (key, subspace) in space.spaces.items()
-        ]
+        ],
     )
 
 
@@ -169,7 +169,7 @@ def write_to_shared_memory(index, value, shared_memory, space):
             "type `{0}`. Shared memory only supports "
             "default Gym spaces (e.g. `Box`, `Tuple`, "
             "`Dict`, etc...), and does not support custom "
-            "Gym spaces.".format(type(space))
+            "Gym spaces.".format(type(space)),
         )
 
 

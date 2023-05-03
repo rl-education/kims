@@ -5,7 +5,7 @@ from tests.envs.spec_list import skip_mujoco, SKIP_MUJOCO_WARNING_MESSAGE
 
 
 def verify_environments_match(
-    old_environment_id, new_environment_id, seed=1, num_actions=1000
+    old_environment_id, new_environment_id, seed=1, num_actions=1000,
 ):
     old_environment = envs.make(old_environment_id)
     new_environment = envs.make(new_environment_id)

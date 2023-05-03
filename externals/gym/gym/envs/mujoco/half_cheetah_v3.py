@@ -72,10 +72,10 @@ class HalfCheetahEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         noise_high = self._reset_noise_scale
 
         qpos = self.init_qpos + self.np_random.uniform(
-            low=noise_low, high=noise_high, size=self.model.nq
+            low=noise_low, high=noise_high, size=self.model.nq,
         )
         qvel = self.init_qvel + self._reset_noise_scale * self.np_random.randn(
-            self.model.nv
+            self.model.nv,
         )
 
         self.set_state(qpos, qvel)

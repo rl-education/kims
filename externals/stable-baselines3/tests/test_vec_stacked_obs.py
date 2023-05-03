@@ -30,7 +30,7 @@ def test_compute_stacking_multidim_box():
 def test_compute_stacking_multidim_box_channel_first():
     space = spaces.Box(-1, 1, (4, 5))
     channels_first, stack_dimension, stacked_shape, repeat_axis = compute_stacking(
-        N_STACK, observation_space=space, channels_order="first"
+        N_STACK, observation_space=space, channels_order="first",
     )
     assert channels_first  # default is channel last
     assert stack_dimension == 1
@@ -62,7 +62,7 @@ def test_compute_stacking_image_channel_first_stack_last():
     """Detect that image is channel first and stack in that dimension."""
     space = spaces.Box(0, 255, (C, H, W), dtype=np.uint8)
     channels_first, stack_dimension, stacked_shape, repeat_axis = compute_stacking(
-        N_STACK, observation_space=space, channels_order="last"
+        N_STACK, observation_space=space, channels_order="last",
     )
     assert not channels_first  # default is channel last
     assert stack_dimension == -1
@@ -74,7 +74,7 @@ def test_compute_stacking_image_channel_last_stack_first():
     """Detect that image is channel last and stack in that dimension."""
     space = spaces.Box(0, 255, (H, W, C), dtype=np.uint8)
     channels_first, stack_dimension, stacked_shape, repeat_axis = compute_stacking(
-        N_STACK, observation_space=space, channels_order="first"
+        N_STACK, observation_space=space, channels_order="first",
     )
     assert channels_first  # default is channel last
     assert stack_dimension == 1
@@ -98,7 +98,7 @@ def test_reset_update_box():
     assert np.array_equal(
         stacked_obs,
         np.concatenate(
-            (np.zeros_like(observations_1), np.zeros_like(observations_1), observations_1, observations_2), axis=-1
+            (np.zeros_like(observations_1), np.zeros_like(observations_1), observations_1, observations_2), axis=-1,
         ),
     )
 
@@ -119,7 +119,7 @@ def test_reset_update_multidim_box():
     assert np.array_equal(
         stacked_obs,
         np.concatenate(
-            (np.zeros_like(observations_1), np.zeros_like(observations_1), observations_1, observations_2), axis=-1
+            (np.zeros_like(observations_1), np.zeros_like(observations_1), observations_1, observations_2), axis=-1,
         ),
     )
 
@@ -178,7 +178,7 @@ def test_reset_update_image_channel_last():
     assert np.array_equal(
         stacked_obs,
         np.concatenate(
-            (np.zeros_like(observations_1), np.zeros_like(observations_1), observations_1, observations_2), axis=-1
+            (np.zeros_like(observations_1), np.zeros_like(observations_1), observations_1, observations_2), axis=-1,
         ),
     )
 
@@ -199,7 +199,7 @@ def test_reset_update_image_channel_first_stack_last():
     assert np.array_equal(
         stacked_obs,
         np.concatenate(
-            (np.zeros_like(observations_1), np.zeros_like(observations_1), observations_1, observations_2), axis=-1
+            (np.zeros_like(observations_1), np.zeros_like(observations_1), observations_1, observations_2), axis=-1,
         ),
     )
 
@@ -307,7 +307,7 @@ def test_episode_termination_dict():
     for key, axis in zip(observations_1.keys(), [0, -1]):
         zeros = np.zeros_like(observations_1[key][0])
         true_stacked_obs_env1 = np.concatenate(
-            (zeros, observations_1[key][0], observations_2[key][0], observations_3[key][0]), axis
+            (zeros, observations_1[key][0], observations_2[key][0], observations_3[key][0]), axis,
         )
         true_stacked_obs_env2 = np.concatenate((zeros, zeros, zeros, observations_3[key][1]), axis)
         true_stacked_obs = np.stack((true_stacked_obs_env1, true_stacked_obs_env2))

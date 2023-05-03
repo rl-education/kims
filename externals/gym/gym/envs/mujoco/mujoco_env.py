@@ -13,8 +13,8 @@ try:
 except ImportError as e:
     raise error.DependencyNotInstalled(
         "{}. (HINT: you need to install mujoco_py, and also perform the setup instructions here: https://github.com/openai/mujoco-py/.)".format(
-            e
-        )
+            e,
+        ),
     )
 
 DEFAULT_SIZE = 500
@@ -27,8 +27,8 @@ def convert_observation_to_space(observation):
                 [
                     (key, convert_observation_to_space(value))
                     for key, value in observation.items()
-                ]
-            )
+                ],
+            ),
         )
     elif isinstance(observation, np.ndarray):
         low = np.full(observation.shape, -float("inf"), dtype=np.float32)
@@ -118,7 +118,7 @@ class MujocoEnv(gym.Env):
         assert qpos.shape == (self.model.nq,) and qvel.shape == (self.model.nv,)
         old_state = self.sim.get_state()
         new_state = mujoco_py.MjSimState(
-            old_state.time, qpos, qvel, old_state.act, old_state.udd_state
+            old_state.time, qpos, qvel, old_state.act, old_state.udd_state,
         )
         self.sim.set_state(new_state)
         self.sim.forward()
@@ -144,7 +144,7 @@ class MujocoEnv(gym.Env):
             if camera_id is not None and camera_name is not None:
                 raise ValueError(
                     "Both `camera_id` and `camera_name` cannot be"
-                    " specified at the same time."
+                    " specified at the same time.",
                 )
 
             no_camera_specified = camera_name is None and camera_id is None

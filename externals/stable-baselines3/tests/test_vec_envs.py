@@ -215,7 +215,7 @@ SPACES = collections.OrderedDict(
         ("multidiscrete", spaces.MultiDiscrete([2, 3])),
         ("multibinary", spaces.MultiBinary(3)),
         ("continuous", spaces.Box(low=np.zeros(2), high=np.ones(2))),
-    ]
+    ],
 )
 
 
@@ -372,7 +372,7 @@ def test_framestack_vecenv():
                 low=np.zeros(image_space_shape),
                 high=np.ones(image_space_shape) * 255,
                 dtype=np.uint8,
-            )
+            ),
         )
 
     def make_transposed_image_env():
@@ -381,7 +381,7 @@ def test_framestack_vecenv():
                 low=np.zeros(transposed_image_space_shape),
                 high=np.ones(transposed_image_space_shape) * 255,
                 dtype=np.uint8,
-            )
+            ),
         )
 
     def make_non_image_env():

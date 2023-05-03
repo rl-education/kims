@@ -41,9 +41,9 @@ NESTED_DICT_TEST_CASES = (
                     {
                         "subkey1": Box(shape=(2,), low=-1, high=1, dtype=np.float32),
                         "subkey2": Box(shape=(2,), low=-1, high=1, dtype=np.float32),
-                    }
+                    },
                 ),
-            }
+            },
         ),
         (6,),
     ),
@@ -53,7 +53,7 @@ NESTED_DICT_TEST_CASES = (
                 "key1": Box(shape=(2, 3), low=-1, high=1, dtype=np.float32),
                 "key2": Box(shape=(), low=-1, high=1, dtype=np.float32),
                 "key3": Box(shape=(2,), low=-1, high=1, dtype=np.float32),
-            }
+            },
         ),
         (9,),
     ),
@@ -64,11 +64,11 @@ NESTED_DICT_TEST_CASES = (
                     (
                         Box(shape=(2,), low=-1, high=1, dtype=np.float32),
                         Box(shape=(2,), low=-1, high=1, dtype=np.float32),
-                    )
+                    ),
                 ),
                 "key2": Box(shape=(), low=-1, high=1, dtype=np.float32),
                 "key3": Box(shape=(2,), low=-1, high=1, dtype=np.float32),
-            }
+            },
         ),
         (7,),
     ),
@@ -78,7 +78,7 @@ NESTED_DICT_TEST_CASES = (
                 "key1": Tuple((Box(shape=(2,), low=-1, high=1, dtype=np.float32),)),
                 "key2": Box(shape=(), low=-1, high=1, dtype=np.float32),
                 "key3": Box(shape=(2,), low=-1, high=1, dtype=np.float32),
-            }
+            },
         ),
         (5,),
     ),
@@ -86,11 +86,11 @@ NESTED_DICT_TEST_CASES = (
         Dict(
             {
                 "key1": Tuple(
-                    (Dict({"key9": Box(shape=(2,), low=-1, high=1, dtype=np.float32)}),)
+                    (Dict({"key9": Box(shape=(2,), low=-1, high=1, dtype=np.float32)}),),
                 ),
                 "key2": Box(shape=(), low=-1, high=1, dtype=np.float32),
                 "key3": Box(shape=(2,), low=-1, high=1, dtype=np.float32),
-            }
+            },
         ),
         (5,),
     ),

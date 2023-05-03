@@ -28,7 +28,7 @@ class InvertedDoublePendulumEnv(mujoco_env.MujocoEnv, utils.EzPickle):
                 np.cos(self.sim.data.qpos[1:]),
                 np.clip(self.sim.data.qvel, -10, 10),
                 np.clip(self.sim.data.qfrc_constraint, -10, 10),
-            ]
+            ],
         ).ravel()
 
     def reset_model(self):

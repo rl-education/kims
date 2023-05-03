@@ -86,10 +86,10 @@ class Actor(BasePolicy):
 
         if self.use_sde:
             self.action_dist = StateDependentNoiseDistribution(
-                action_dim, full_std=full_std, use_expln=use_expln, learn_features=True, squash_output=True
+                action_dim, full_std=full_std, use_expln=use_expln, learn_features=True, squash_output=True,
             )
             self.mu, self.log_std = self.action_dist.proba_distribution_net(
-                latent_dim=last_layer_dim, latent_sde_dim=last_layer_dim, log_std_init=log_std_init
+                latent_dim=last_layer_dim, latent_sde_dim=last_layer_dim, log_std_init=log_std_init,
             )
             # Avoid numerical issues by limiting the mean of the Gaussian
             # to be in [-clip_mean, clip_mean]
@@ -114,7 +114,7 @@ class Actor(BasePolicy):
                 use_expln=self.use_expln,
                 features_extractor=self.features_extractor,
                 clip_mean=self.clip_mean,
-            )
+            ),
         )
         return data
 
@@ -264,7 +264,7 @@ class SACPolicy(BasePolicy):
                 "n_critics": n_critics,
                 "net_arch": critic_arch,
                 "share_features_extractor": share_features_extractor,
-            }
+            },
         )
 
         self.actor, self.actor_target = None, None
@@ -314,7 +314,7 @@ class SACPolicy(BasePolicy):
                 optimizer_kwargs=self.optimizer_kwargs,
                 features_extractor_class=self.features_extractor_class,
                 features_extractor_kwargs=self.features_extractor_kwargs,
-            )
+            ),
         )
         return data
 

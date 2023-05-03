@@ -16,7 +16,7 @@ ROLLOUT_FILE = os.path.join(DATA_DIR, "rollout.json")
 
 if not os.path.isfile(ROLLOUT_FILE):
     logger.info(
-        "No rollout file found. Writing empty json file to {}".format(ROLLOUT_FILE)
+        "No rollout file found. Writing empty json file to {}".format(ROLLOUT_FILE),
     )
     with open(ROLLOUT_FILE, "w") as outfile:
         json.dump({}, outfile, indent=2)
@@ -51,8 +51,8 @@ def update_rollout_dict(spec, rollout_dict):
         # If running the env generates an exception, don't write to the rollout file
         logger.warn(
             "Exception {} thrown while generating rollout for {}. Rollout not added.".format(
-                sys.exc_info()[0], spec.id
-            )
+                sys.exc_info()[0], spec.id,
+            ),
         )
         return False
 
@@ -111,7 +111,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("-v", "--verbose", action="store_true")
     parser.add_argument(
-        "specs", nargs="*", help="ids of env specs to check (default: all)"
+        "specs", nargs="*", help="ids of env specs to check (default: all)",
     )
     args = parser.parse_args()
     if args.verbose:

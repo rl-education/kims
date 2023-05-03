@@ -14,7 +14,7 @@ from stable_baselines3.common.preprocessing import get_action_dim
 SelfDistribution = TypeVar("SelfDistribution", bound="Distribution")
 SelfDiagGaussianDistribution = TypeVar("SelfDiagGaussianDistribution", bound="DiagGaussianDistribution")
 SelfSquashedDiagGaussianDistribution = TypeVar(
-    "SelfSquashedDiagGaussianDistribution", bound="SquashedDiagGaussianDistribution"
+    "SelfSquashedDiagGaussianDistribution", bound="SquashedDiagGaussianDistribution",
 )
 SelfCategoricalDistribution = TypeVar("SelfCategoricalDistribution", bound="CategoricalDistribution")
 SelfMultiCategoricalDistribution = TypeVar("SelfMultiCategoricalDistribution", bound="MultiCategoricalDistribution")
@@ -151,7 +151,7 @@ class DiagGaussianDistribution(Distribution):
         return mean_actions, log_std
 
     def proba_distribution(
-        self: SelfDiagGaussianDistribution, mean_actions: th.Tensor, log_std: th.Tensor
+        self: SelfDiagGaussianDistribution, mean_actions: th.Tensor, log_std: th.Tensor,
     ) -> SelfDiagGaussianDistribution:
         """
         Create the distribution given its parameters (mean, std)
@@ -219,7 +219,7 @@ class SquashedDiagGaussianDistribution(DiagGaussianDistribution):
         self.gaussian_actions = None
 
     def proba_distribution(
-        self: SelfSquashedDiagGaussianDistribution, mean_actions: th.Tensor, log_std: th.Tensor
+        self: SelfSquashedDiagGaussianDistribution, mean_actions: th.Tensor, log_std: th.Tensor,
     ) -> SelfSquashedDiagGaussianDistribution:
         super().proba_distribution(mean_actions, log_std)
         return self
@@ -337,7 +337,7 @@ class MultiCategoricalDistribution(Distribution):
         return action_logits
 
     def proba_distribution(
-        self: SelfMultiCategoricalDistribution, action_logits: th.Tensor
+        self: SelfMultiCategoricalDistribution, action_logits: th.Tensor,
     ) -> SelfMultiCategoricalDistribution:
         self.distribution = [Categorical(logits=split) for split in th.split(action_logits, tuple(self.action_dims), dim=1)]
         return self
@@ -345,7 +345,7 @@ class MultiCategoricalDistribution(Distribution):
     def log_prob(self, actions: th.Tensor) -> th.Tensor:
         # Extract each discrete action and compute log prob for their respective distributions
         return th.stack(
-            [dist.log_prob(action) for dist, action in zip(self.distribution, th.unbind(actions, dim=1))], dim=1
+            [dist.log_prob(action) for dist, action in zip(self.distribution, th.unbind(actions, dim=1))], dim=1,
         ).sum(dim=1)
 
     def entropy(self) -> th.Tensor:
@@ -508,7 +508,7 @@ class StateDependentNoiseDistribution(Distribution):
         self.exploration_matrices = self.weights_dist.rsample((batch_size,))
 
     def proba_distribution_net(
-        self, latent_dim: int, log_std_init: float = -2.0, latent_sde_dim: Optional[int] = None
+        self, latent_dim: int, log_std_init: float = -2.0, latent_sde_dim: Optional[int] = None,
     ) -> Tuple[nn.Module, nn.Parameter]:
         """
         Create the layers and parameter that represent the distribution:
@@ -535,7 +535,7 @@ class StateDependentNoiseDistribution(Distribution):
         return mean_actions_net, log_std
 
     def proba_distribution(
-        self: SelfStateDependentNoiseDistribution, mean_actions: th.Tensor, log_std: th.Tensor, latent_sde: th.Tensor
+        self: SelfStateDependentNoiseDistribution, mean_actions: th.Tensor, log_std: th.Tensor, latent_sde: th.Tensor,
     ) -> SelfStateDependentNoiseDistribution:
         """
         Create the distribution given its parameters (mean, std)
@@ -599,14 +599,14 @@ class StateDependentNoiseDistribution(Distribution):
         return noise.squeeze(dim=1)
 
     def actions_from_params(
-        self, mean_actions: th.Tensor, log_std: th.Tensor, latent_sde: th.Tensor, deterministic: bool = False
+        self, mean_actions: th.Tensor, log_std: th.Tensor, latent_sde: th.Tensor, deterministic: bool = False,
     ) -> th.Tensor:
         # Update the proba distribution
         self.proba_distribution(mean_actions, log_std, latent_sde)
         return self.get_actions(deterministic=deterministic)
 
     def log_prob_from_params(
-        self, mean_actions: th.Tensor, log_std: th.Tensor, latent_sde: th.Tensor
+        self, mean_actions: th.Tensor, log_std: th.Tensor, latent_sde: th.Tensor,
     ) -> Tuple[th.Tensor, th.Tensor]:
         actions = self.actions_from_params(mean_actions, log_std, latent_sde)
         log_prob = self.log_prob(actions)
@@ -657,7 +657,7 @@ class TanhBijector:
 
 
 def make_proba_distribution(
-    action_space: spaces.Space, use_sde: bool = False, dist_kwargs: Optional[Dict[str, Any]] = None
+    action_space: spaces.Space, use_sde: bool = False, dist_kwargs: Optional[Dict[str, Any]] = None,
 ) -> Distribution:
     """
     Return an instance of Distribution for the correct type of action space
@@ -684,7 +684,7 @@ def make_proba_distribution(
         raise NotImplementedError(
             "Error: probability distribution, not implemented for action space"
             f"of type {type(action_space)}."
-            " Must be of type Gym Spaces: Box, Discrete, MultiDiscrete or MultiBinary."
+            " Must be of type Gym Spaces: Box, Discrete, MultiDiscrete or MultiBinary.",
         )
 
 

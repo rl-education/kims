@@ -69,19 +69,19 @@ class Continuous_MountainCarEnv(gym.Env):
         self.power = 0.0015
 
         self.low_state = np.array(
-            [self.min_position, -self.max_speed], dtype=np.float32
+            [self.min_position, -self.max_speed], dtype=np.float32,
         )
         self.high_state = np.array(
-            [self.max_position, self.max_speed], dtype=np.float32
+            [self.max_position, self.max_speed], dtype=np.float32,
         )
 
         self.viewer = None
 
         self.action_space = spaces.Box(
-            low=self.min_action, high=self.max_action, shape=(1,), dtype=np.float32
+            low=self.min_action, high=self.max_action, shape=(1,), dtype=np.float32,
         )
         self.observation_space = spaces.Box(
-            low=self.low_state, high=self.high_state, dtype=np.float32
+            low=self.low_state, high=self.high_state, dtype=np.float32,
         )
 
         self.seed()
@@ -159,13 +159,13 @@ class Continuous_MountainCarEnv(gym.Env):
             frontwheel = rendering.make_circle(carheight / 2.5)
             frontwheel.set_color(0.5, 0.5, 0.5)
             frontwheel.add_attr(
-                rendering.Transform(translation=(carwidth / 4, clearance))
+                rendering.Transform(translation=(carwidth / 4, clearance)),
             )
             frontwheel.add_attr(self.cartrans)
             self.viewer.add_geom(frontwheel)
             backwheel = rendering.make_circle(carheight / 2.5)
             backwheel.add_attr(
-                rendering.Transform(translation=(-carwidth / 4, clearance))
+                rendering.Transform(translation=(-carwidth / 4, clearance)),
             )
             backwheel.add_attr(self.cartrans)
             backwheel.set_color(0.5, 0.5, 0.5)
@@ -176,14 +176,14 @@ class Continuous_MountainCarEnv(gym.Env):
             flagpole = rendering.Line((flagx, flagy1), (flagx, flagy2))
             self.viewer.add_geom(flagpole)
             flag = rendering.FilledPolygon(
-                [(flagx, flagy2), (flagx, flagy2 - 10), (flagx + 25, flagy2 - 5)]
+                [(flagx, flagy2), (flagx, flagy2 - 10), (flagx + 25, flagy2 - 5)],
             )
             flag.set_color(0.8, 0.8, 0)
             self.viewer.add_geom(flag)
 
         pos = self.state[0]
         self.cartrans.set_translation(
-            (pos - self.min_position) * scale, self._height(pos) * scale
+            (pos - self.min_position) * scale, self._height(pos) * scale,
         )
         self.cartrans.set_rotation(math.cos(3 * pos))
 

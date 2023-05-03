@@ -18,11 +18,11 @@ class GrayScaleObservation(ObservationWrapper):
         obs_shape = self.observation_space.shape[:2]
         if self.keep_dim:
             self.observation_space = Box(
-                low=0, high=255, shape=(obs_shape[0], obs_shape[1], 1), dtype=np.uint8
+                low=0, high=255, shape=(obs_shape[0], obs_shape[1], 1), dtype=np.uint8,
             )
         else:
             self.observation_space = Box(
-                low=0, high=255, shape=obs_shape, dtype=np.uint8
+                low=0, high=255, shape=obs_shape, dtype=np.uint8,
             )
 
     def observation(self, observation):

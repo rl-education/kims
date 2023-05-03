@@ -45,7 +45,7 @@ def batch_space(space, n=1):
     else:
         raise ValueError(
             "Cannot batch space with type `{0}`. The space must "
-            "be a valid `gym.Space` instance.".format(type(space))
+            "be a valid `gym.Space` instance.".format(type(space)),
         )
 
 
@@ -80,8 +80,8 @@ def batch_space_dict(space, n=1):
             [
                 (key, batch_space(subspace, n=n))
                 for (key, subspace) in space.spaces.items()
-            ]
-        )
+            ],
+        ),
     )
 
 

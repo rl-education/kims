@@ -44,14 +44,14 @@ class StackedObservations(Generic[TObs]):
                 for key, subspace in observation_space.spaces.items()
             }
             self.stacked_observation_space = spaces.Dict(
-                {key: substack_obs.stacked_observation_space for key, substack_obs in self.sub_stacked_observations.items()}
+                {key: substack_obs.stacked_observation_space for key, substack_obs in self.sub_stacked_observations.items()},
             )  # type: spaces.Dict # make mypy happy
         elif isinstance(observation_space, spaces.Box):
             if isinstance(channels_order, Mapping):
                 raise TypeError("When the observation space is Box, channels_order can't be a dict.")
 
             self.channels_first, self.stack_dimension, self.stacked_shape, self.repeat_axis = self.compute_stacking(
-                n_stack, observation_space, channels_order
+                n_stack, observation_space, channels_order,
             )
             low = np.repeat(observation_space.low, n_stack, axis=self.repeat_axis)
             high = np.repeat(observation_space.high, n_stack, axis=self.repeat_axis)
@@ -59,12 +59,12 @@ class StackedObservations(Generic[TObs]):
             self.stacked_obs = np.zeros((num_envs, *self.stacked_shape), dtype=observation_space.dtype)
         else:
             raise TypeError(
-                f"StackedObservations only supports Box and Dict as observation spaces. {observation_space} was provided."
+                f"StackedObservations only supports Box and Dict as observation spaces. {observation_space} was provided.",
             )
 
     @staticmethod
     def compute_stacking(
-        n_stack: int, observation_space: spaces.Box, channels_order: Optional[str] = None
+        n_stack: int, observation_space: spaces.Box, channels_order: Optional[str] = None,
     ) -> Tuple[bool, int, Tuple[int, ...], int]:
         """
         Calculates the parameters in order to stack observations
@@ -121,7 +121,7 @@ class StackedObservations(Generic[TObs]):
                 {
                     key: sub_stacked_observation.stack_observation_space(sub_stacked_observation.observation_space)
                     for key, sub_stacked_observation in self.sub_stacked_observations.items()
-                }
+                },
             )
         low = np.repeat(observation_space.low, self.n_stack, axis=self.repeat_axis)
         high = np.repeat(observation_space.high, self.n_stack, axis=self.repeat_axis)

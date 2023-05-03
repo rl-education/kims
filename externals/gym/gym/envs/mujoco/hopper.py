@@ -28,15 +28,15 @@ class HopperEnv(mujoco_env.MujocoEnv, utils.EzPickle):
 
     def _get_obs(self):
         return np.concatenate(
-            [self.sim.data.qpos.flat[1:], np.clip(self.sim.data.qvel.flat, -10, 10)]
+            [self.sim.data.qpos.flat[1:], np.clip(self.sim.data.qvel.flat, -10, 10)],
         )
 
     def reset_model(self):
         qpos = self.init_qpos + self.np_random.uniform(
-            low=-0.005, high=0.005, size=self.model.nq
+            low=-0.005, high=0.005, size=self.model.nq,
         )
         qvel = self.init_qvel + self.np_random.uniform(
-            low=-0.005, high=0.005, size=self.model.nv
+            low=-0.005, high=0.005, size=self.model.nv,
         )
         self.set_state(qpos, qvel)
         return self._get_obs()

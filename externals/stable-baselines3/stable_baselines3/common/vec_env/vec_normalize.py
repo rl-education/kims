@@ -110,7 +110,7 @@ class VecNormalize(VecEnvWrapper):
                         f"VecNormalize only supports `gym.spaces.Box` observation spaces but {obs_key} "
                         f"is of type {self.observation_space.spaces[obs_key]}. "
                         "You should probably explicitely pass the observation keys "
-                        " that should be normalized via the `norm_obs_keys` parameter."
+                        " that should be normalized via the `norm_obs_keys` parameter.",
                     )
 
         elif isinstance(self.observation_space, spaces.Box):
@@ -120,7 +120,7 @@ class VecNormalize(VecEnvWrapper):
         else:
             raise ValueError(
                 "VecNormalize only supports `gym.spaces.Box` and `gym.spaces.Dict` observation spaces, "
-                f"not {self.observation_space}"
+                f"not {self.observation_space}",
             )
 
     def __getstate__(self) -> Dict[str, Any]:

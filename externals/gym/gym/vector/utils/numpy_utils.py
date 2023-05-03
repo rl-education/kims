@@ -48,7 +48,7 @@ def concatenate(items, out, space):
     else:
         raise ValueError(
             "Space of type `{0}` is not a valid `gym.Space` "
-            "instance.".format(type(space))
+            "instance.".format(type(space)),
         )
 
 
@@ -68,7 +68,7 @@ def concatenate_dict(items, out, space):
         [
             (key, concatenate([item[key] for item in items], out[key], subspace))
             for (key, subspace) in space.spaces.items()
-        ]
+        ],
     )
 
 
@@ -120,7 +120,7 @@ def create_empty_array(space, n=1, fn=np.zeros):
     else:
         raise ValueError(
             "Space of type `{0}` is not a valid `gym.Space` "
-            "instance.".format(type(space))
+            "instance.".format(type(space)),
         )
 
 
@@ -138,7 +138,7 @@ def create_empty_array_dict(space, n=1, fn=np.zeros):
         [
             (key, create_empty_array(subspace, n=n, fn=fn))
             for (key, subspace) in space.spaces.items()
-        ]
+        ],
     )
 
 

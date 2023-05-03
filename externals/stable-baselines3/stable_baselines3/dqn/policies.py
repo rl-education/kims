@@ -80,7 +80,7 @@ class QNetwork(BasePolicy):
                 features_dim=self.features_dim,
                 activation_fn=self.activation_fn,
                 features_extractor=self.features_extractor,
-            )
+            ),
         )
         return data
 
@@ -194,7 +194,7 @@ class DQNPolicy(BasePolicy):
                 optimizer_kwargs=self.optimizer_kwargs,
                 features_extractor_class=self.features_extractor_class,
                 features_extractor_kwargs=self.features_extractor_kwargs,
-            )
+            ),
         )
         return data
 

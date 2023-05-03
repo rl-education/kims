@@ -15,7 +15,7 @@ class RescaleAction(gym.ActionWrapper):
 
     def __init__(self, env, min_action, max_action):
         assert isinstance(
-            env.action_space, spaces.Box
+            env.action_space, spaces.Box,
         ), "expected Box action space, got {}".format(type(env.action_space))
         assert np.less_equal(min_action, max_action).all(), (min_action, max_action)
 

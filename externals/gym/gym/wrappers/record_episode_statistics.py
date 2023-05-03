@@ -24,7 +24,7 @@ class RecordEpisodeStatistics(gym.Wrapper):
 
     def step(self, action):
         observations, rewards, dones, infos = super(RecordEpisodeStatistics, self).step(
-            action
+            action,
         )
         self.episode_returns += rewards
         self.episode_lengths += 1

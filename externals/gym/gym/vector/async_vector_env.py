@@ -109,10 +109,10 @@ class AsyncVectorEnv(VectorEnv):
         if self.shared_memory:
             try:
                 _obs_buffer = create_shared_memory(
-                    self.single_observation_space, n=self.num_envs, ctx=ctx
+                    self.single_observation_space, n=self.num_envs, ctx=ctx,
                 )
                 self.observations = read_from_shared_memory(
-                    _obs_buffer, self.single_observation_space, n=self.num_envs
+                    _obs_buffer, self.single_observation_space, n=self.num_envs,
                 )
             except CustomSpaceError:
                 raise ValueError(
@@ -121,12 +121,12 @@ class AsyncVectorEnv(VectorEnv):
                     "(i.e. custom spaces inheriting from `gym.Space`), and is "
                     "only compatible with default Gym spaces (e.g. `Box`, "
                     "`Tuple`, `Dict`) for batching. Set `shared_memory=False` "
-                    "if you use custom observation spaces."
+                    "if you use custom observation spaces.",
                 )
         else:
             _obs_buffer = None
             self.observations = create_empty_array(
-                self.single_observation_space, n=self.num_envs, fn=np.zeros
+                self.single_observation_space, n=self.num_envs, fn=np.zeros,
             )
 
         self.parent_pipes, self.processes = [], []
@@ -216,7 +216,7 @@ class AsyncVectorEnv(VectorEnv):
             self._state = AsyncState.DEFAULT
             raise mp.TimeoutError(
                 "The call to `reset_wait` has timed out after "
-                "{0} second{1}.".format(timeout, "s" if timeout > 1 else "")
+                "{0} second{1}.".format(timeout, "s" if timeout > 1 else ""),
             )
 
         results, successes = zip(*[pipe.recv() for pipe in self.parent_pipes])
@@ -225,7 +225,7 @@ class AsyncVectorEnv(VectorEnv):
 
         if not self.shared_memory:
             self.observations = concatenate(
-                results, self.observations, self.single_observation_space
+                results, self.observations, self.single_observation_space,
             )
 
         return deepcopy(self.observations) if self.copy else self.observations
@@ -282,7 +282,7 @@ class AsyncVectorEnv(VectorEnv):
             self._state = AsyncState.DEFAULT
             raise mp.TimeoutError(
                 "The call to `step_wait` has timed out after "
-                "{0} second{1}.".format(timeout, "s" if timeout > 1 else "")
+                "{0} second{1}.".format(timeout, "s" if timeout > 1 else ""),
             )
 
         results, successes = zip(*[pipe.recv() for pipe in self.parent_pipes])
@@ -292,7 +292,7 @@ class AsyncVectorEnv(VectorEnv):
 
         if not self.shared_memory:
             self.observations = concatenate(
-                observations_list, self.observations, self.single_observation_space
+                observations_list, self.observations, self.single_observation_space,
             )
 
         return (
@@ -320,7 +320,7 @@ class AsyncVectorEnv(VectorEnv):
             if self._state != AsyncState.DEFAULT:
                 logger.warn(
                     "Calling `close` while waiting for a pending "
-                    "call to `{0}` to complete.".format(self._state.value)
+                    "call to `{0}` to complete.".format(self._state.value),
                 )
                 function = getattr(self, "{0}_wait".format(self._state.value))
                 function(timeout)
@@ -370,14 +370,14 @@ class AsyncVectorEnv(VectorEnv):
                 "Some environments have an observation space "
                 "different from `{0}`. In order to batch observations, the "
                 "observation spaces from all environments must be "
-                "equal.".format(self.single_observation_space)
+                "equal.".format(self.single_observation_space),
             )
 
     def _assert_is_running(self):
         if self.closed:
             raise ClosedEnvironmentError(
                 "Trying to operate on `{0}`, after a "
-                "call to `close()`.".format(type(self).__name__)
+                "call to `close()`.".format(type(self).__name__),
             )
 
     def _raise_if_errors(self, successes):
@@ -390,7 +390,7 @@ class AsyncVectorEnv(VectorEnv):
             index, exctype, value = self.error_queue.get()
             logger.error(
                 "Received the following error from Worker-{0}: "
-                "{1}: {2}".format(index, exctype.__name__, value)
+                "{1}: {2}".format(index, exctype.__name__, value),
             )
             logger.error("Shutting down Worker-{0}.".format(index))
             self.parent_pipes[index].close()
@@ -427,7 +427,7 @@ def _worker(index, env_fn, pipe, parent_pipe, shared_memory, error_queue):
                 raise RuntimeError(
                     "Received unknown command `{0}`. Must "
                     "be one of {`reset`, `step`, `seed`, `close`, "
-                    "`_check_observation_space`}.".format(command)
+                    "`_check_observation_space`}.".format(command),
                 )
     except (KeyboardInterrupt, Exception):
         error_queue.put((index,) + sys.exc_info()[:2])
@@ -447,7 +447,7 @@ def _worker_shared_memory(index, env_fn, pipe, parent_pipe, shared_memory, error
             if command == "reset":
                 observation = env.reset()
                 write_to_shared_memory(
-                    index, observation, shared_memory, observation_space
+                    index, observation, shared_memory, observation_space,
                 )
                 pipe.send((None, True))
             elif command == "step":
@@ -455,7 +455,7 @@ def _worker_shared_memory(index, env_fn, pipe, parent_pipe, shared_memory, error
                 if done:
                     observation = env.reset()
                 write_to_shared_memory(
-                    index, observation, shared_memory, observation_space
+                    index, observation, shared_memory, observation_space,
                 )
                 pipe.send(((None, reward, done, info), True))
             elif command == "seed":
@@ -470,7 +470,7 @@ def _worker_shared_memory(index, env_fn, pipe, parent_pipe, shared_memory, error
                 raise RuntimeError(
                     "Received unknown command `{0}`. Must "
                     "be one of {`reset`, `step`, `seed`, `close`, "
-                    "`_check_observation_space`}.".format(command)
+                    "`_check_observation_space`}.".format(command),
                 )
     except (KeyboardInterrupt, Exception):
         error_queue.put((index,) + sys.exc_info()[:2])

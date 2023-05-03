@@ -168,7 +168,7 @@ def test_categorical(dist, CAT_ACTIONS):
         MultiCategoricalDistribution([N_ACTIONS, N_ACTIONS]).proba_distribution(th.rand(1, sum([N_ACTIONS, N_ACTIONS]))),
         SquashedDiagGaussianDistribution(N_ACTIONS).proba_distribution(th.rand(N_ACTIONS), th.rand(N_ACTIONS)),
         StateDependentNoiseDistribution(N_ACTIONS).proba_distribution(
-            th.rand(N_ACTIONS), th.rand([N_ACTIONS, N_ACTIONS]), th.rand([N_ACTIONS, N_ACTIONS])
+            th.rand(N_ACTIONS), th.rand([N_ACTIONS, N_ACTIONS]), th.rand([N_ACTIONS, N_ACTIONS]),
         ),
     ],
 )
@@ -226,7 +226,7 @@ def test_kl_divergence(dist_type):
         actions = th.tensor([0.0, 1.0])
         ad_hoc_kl = th.sum(
             th.exp(dist1.distribution.log_prob(actions))
-            * (dist1.distribution.log_prob(actions) - dist2.distribution.log_prob(actions))
+            * (dist1.distribution.log_prob(actions) - dist2.distribution.log_prob(actions)),
         )
 
         assert th.allclose(full_kl_div, ad_hoc_kl)

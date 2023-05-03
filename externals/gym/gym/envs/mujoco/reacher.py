@@ -32,7 +32,7 @@ class ReacherEnv(mujoco_env.MujocoEnv, utils.EzPickle):
                 break
         qpos[-2:] = self.goal
         qvel = self.init_qvel + self.np_random.uniform(
-            low=-0.005, high=0.005, size=self.model.nv
+            low=-0.005, high=0.005, size=self.model.nv,
         )
         qvel[-2:] = 0
         self.set_state(qpos, qvel)
@@ -47,5 +47,5 @@ class ReacherEnv(mujoco_env.MujocoEnv, utils.EzPickle):
                 self.sim.data.qpos.flat[2:],
                 self.sim.data.qvel.flat[:2],
                 self.get_body_com("fingertip") - self.get_body_com("target"),
-            ]
+            ],
         )

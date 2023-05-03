@@ -440,7 +440,7 @@ class EvalCallback(EventCallback):
                     raise AssertionError(
                         "Training and eval env are not wrapped the same way, "
                         "see https://stable-baselines3.readthedocs.io/en/master/guide/callbacks.html#evalcallback "
-                        "and warning above."
+                        "and warning above.",
                     ) from e
 
             # Reset success rate buffer
@@ -547,7 +547,7 @@ class StopTrainingOnRewardThreshold(BaseCallback):
         if self.verbose >= 1 and not continue_training:
             print(
                 f"Stopping training because the mean reward {self.parent.best_mean_reward:.2f} "
-                f" is above the threshold {self.reward_threshold}"
+                f" is above the threshold {self.reward_threshold}",
             )
         return continue_training
 
@@ -612,7 +612,7 @@ class StopTrainingOnMaxEpisodes(BaseCallback):
                 f"Stopping training with a total of {self.num_timesteps} steps because the "
                 f"{self.locals.get('tb_log_name')} model reached max_episodes={self.max_episodes}, "
                 f"by playing for {self.n_episodes} episodes "
-                f"{mean_ep_str}"
+                f"{mean_ep_str}",
             )
         return continue_training
 
@@ -654,7 +654,7 @@ class StopTrainingOnNoModelImprovement(BaseCallback):
 
         if self.verbose >= 1 and not continue_training:
             print(
-                f"Stopping training because there was no new best model in the last {self.no_improvement_evals:d} evaluations"
+                f"Stopping training because there was no new best model in the last {self.no_improvement_evals:d} evaluations",
             )
 
         return continue_training
@@ -672,7 +672,7 @@ class ProgressBarCallback(BaseCallback):
             raise ImportError(
                 "You must install tqdm and rich in order to use the progress bar callback. "
                 "It is included if you install stable-baselines with the extra packages: "
-                "`pip install stable-baselines3[extra]`"
+                "`pip install stable-baselines3[extra]`",
             )
         self.pbar = None
 

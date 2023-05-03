@@ -160,7 +160,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                 train_freq = (train_freq[0], TrainFrequencyUnit(train_freq[1]))
             except ValueError as e:
                 raise ValueError(
-                    f"The unit of the `train_freq` must be either 'step' or 'episode' not '{train_freq[1]}'!"
+                    f"The unit of the `train_freq` must be either 'step' or 'episode' not '{train_freq[1]}'!",
                 ) from e
 
             if not isinstance(train_freq[0], int):
@@ -274,7 +274,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                 "The last trajectory in the replay buffer will be truncated, "
                 "see https://github.com/DLR-RM/stable-baselines3/issues/46."
                 "You should use `reset_num_timesteps=False` or `optimize_memory_usage=False`"
-                "to avoid that issue."
+                "to avoid that issue.",
             )
             # Go to the previous index
             pos = (replay_buffer.pos - 1) % replay_buffer.buffer_size

@@ -15,7 +15,7 @@ spaces = [
         [
             Discrete(5),
             Box(low=np.array([0, 0]), high=np.array([1, 5]), dtype=np.float32),
-        ]
+        ],
     ),
     Tuple((Discrete(5), Discrete(2), Discrete(2))),
     MultiDiscrete([2, 2, 10]),
@@ -24,9 +24,9 @@ spaces = [
         {
             "position": Discrete(5),
             "velocity": Box(
-                low=np.array([0, 0]), high=np.array([1, 5]), dtype=np.float32
+                low=np.array([0, 0]), high=np.array([1, 5]), dtype=np.float32,
             ),
-        }
+        },
     ),
 ]
 
@@ -43,7 +43,7 @@ def test_flatdim(space, flatdim):
 def test_flatten_space_boxes(space):
     flat_space = utils.flatten_space(space)
     assert isinstance(flat_space, Box), "Expected {} to equal {}".format(
-        type(flat_space), Box
+        type(flat_space), Box,
     )
     flatdim = utils.flatdim(space)
     (single_dim,) = flat_space.shape
@@ -57,7 +57,7 @@ def test_flat_space_contains_flat_points(space):
     flat_space = utils.flatten_space(space)
     for i, flat_sample in enumerate(flattened_samples):
         assert flat_sample in flat_space, "Expected sample #{} {} to be in {}".format(
-            i, flat_sample, flat_space
+            i, flat_sample, flat_space,
         )
 
 
@@ -77,10 +77,10 @@ def test_flatten_roundtripping(space):
         utils.unflatten(space, sample) for sample in flattened_samples
     ]
     for i, (original, roundtripped) in enumerate(
-        zip(some_samples, roundtripped_samples)
+        zip(some_samples, roundtripped_samples),
     ):
         assert compare_nested(
-            original, roundtripped
+            original, roundtripped,
         ), "Expected sample #{} {} to equal {}".format(i, original, roundtripped)
 
 
@@ -90,7 +90,7 @@ def compare_nested(left, right):
     elif isinstance(left, OrderedDict) and isinstance(right, OrderedDict):
         res = len(left) == len(right)
         for ((left_key, left_value), (right_key, right_value)) in zip(
-            left.items(), right.items()
+            left.items(), right.items(),
         ):
             if not res:
                 return False
@@ -140,12 +140,12 @@ def test_dtypes(original_space, expected_flattened_dtype):
     unflattened_sample = utils.unflatten(original_space, flattened_sample)
 
     assert flattened_space.contains(
-        flattened_sample
+        flattened_sample,
     ), "Expected flattened_space to contain flattened_sample"
     assert (
         flattened_space.dtype == expected_flattened_dtype
     ), "Expected flattened_space's dtype to equal " "{}".format(
-        expected_flattened_dtype
+        expected_flattened_dtype,
     )
 
     assert flattened_sample.dtype == flattened_space.dtype, (
@@ -189,7 +189,7 @@ samples = [
     np.array([0, 1, 7], dtype=np.int64),
     np.array([0, 1, 1, 0, 0, 0, 1, 1, 1, 1], dtype=np.int8),
     OrderedDict(
-        [("position", 3), ("velocity", np.array([0.5, 3.5], dtype=np.float32))]
+        [("position", 3), ("velocity", np.array([0.5, 3.5], dtype=np.float32))],
     ),
 ]
 
@@ -251,7 +251,7 @@ expected_flattened_spaces = [
 
 
 @pytest.mark.parametrize(
-    ["space", "expected_flattened_space"], zip(spaces, expected_flattened_spaces)
+    ["space", "expected_flattened_space"], zip(spaces, expected_flattened_spaces),
 )
 def test_flatten_space(space, expected_flattened_space):
     flattened_space = utils.flatten_space(space)

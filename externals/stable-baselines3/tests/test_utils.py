@@ -65,7 +65,7 @@ def test_make_vec_env_func_checker():
 @pytest.mark.parametrize("terminal_on_life_loss", [True, False])
 @pytest.mark.parametrize("clip_reward", [True])
 def test_make_atari_env(
-    env_id, noop_max, action_repeat_probability, frame_skip, screen_size, terminal_on_life_loss, clip_reward
+    env_id, noop_max, action_repeat_probability, frame_skip, screen_size, terminal_on_life_loss, clip_reward,
 ):
     n_envs = 2
     wrapper_kwargs = {
@@ -327,7 +327,7 @@ def test_evaluate_policy_monitors(vec_env_class):
     # Sanity check that we get only one step per episode.
     eval_env = make_eval_env(with_monitor=False, wrapper_class=AlwaysDoneWrapper)
     episode_rewards, episode_lengths = evaluate_policy(
-        model, eval_env, n_eval_episodes, return_episode_rewards=True, warn=False
+        model, eval_env, n_eval_episodes, return_episode_rewards=True, warn=False,
     )
     assert all(map(lambda length: length == 1, episode_lengths)), "AlwaysDoneWrapper did not fix episode lengths to one"
     eval_env.close()

@@ -88,7 +88,7 @@ class HerReplayBuffer(DictReplayBuffer):
 
         # check if goal_selection_strategy is valid
         assert isinstance(
-            self.goal_selection_strategy, GoalSelectionStrategy
+            self.goal_selection_strategy, GoalSelectionStrategy,
         ), f"Invalid goal selection strategy, please use one of {list(GoalSelectionStrategy)}"
 
         self.n_sampled_goal = n_sampled_goal
@@ -196,7 +196,7 @@ class HerReplayBuffer(DictReplayBuffer):
         if not np.any(is_valid):
             raise RuntimeError(
                 "Unable to sample before the end of the first episode. We recommend choosing a value "
-                "for learning_starts that is greater than the maximum number of timesteps in the environment."
+                "for learning_starts that is greater than the maximum number of timesteps in the environment.",
             )
         # Get the indices of valid transitions
         # Example:
@@ -262,7 +262,7 @@ class HerReplayBuffer(DictReplayBuffer):
         # Normalize if needed and remove extra dimension (we are using only one env for now)
         obs_ = self._normalize_obs({key: obs[batch_indices, env_indices, :] for key, obs in self.observations.items()}, env)
         next_obs_ = self._normalize_obs(
-            {key: obs[batch_indices, env_indices, :] for key, obs in self.next_observations.items()}, env
+            {key: obs[batch_indices, env_indices, :] for key, obs in self.next_observations.items()}, env,
         )
 
         # Convert to torch tensor
@@ -276,7 +276,7 @@ class HerReplayBuffer(DictReplayBuffer):
             # Only use dones that are not due to timeouts
             # deactivated by default (timeouts is initialized as an array of False)
             dones=self.to_torch(
-                self.dones[batch_indices, env_indices] * (1 - self.timeouts[batch_indices, env_indices])
+                self.dones[batch_indices, env_indices] * (1 - self.timeouts[batch_indices, env_indices]),
             ).reshape(-1, 1),
             rewards=self.to_torch(self._normalize_reward(self.rewards[batch_indices, env_indices].reshape(-1, 1), env)),
         )
@@ -341,7 +341,7 @@ class HerReplayBuffer(DictReplayBuffer):
             # Only use dones that are not due to timeouts
             # deactivated by default (timeouts is initialized as an array of False)
             dones=self.to_torch(
-                self.dones[batch_indices, env_indices] * (1 - self.timeouts[batch_indices, env_indices])
+                self.dones[batch_indices, env_indices] * (1 - self.timeouts[batch_indices, env_indices]),
             ).reshape(-1, 1),
             rewards=self.to_torch(self._normalize_reward(rewards.reshape(-1, 1), env)),
         )
@@ -388,7 +388,7 @@ class HerReplayBuffer(DictReplayBuffer):
             warnings.warn(
                 "The last trajectory in the replay buffer will be truncated.\n"
                 "If you are in the same episode as when the replay buffer was saved,\n"
-                "you should use `truncate_last_trajectory=False` to avoid that issue."
+                "you should use `truncate_last_trajectory=False` to avoid that issue.",
             )
             self.ep_start[-1] = self.pos
             # set done = True for current episodes

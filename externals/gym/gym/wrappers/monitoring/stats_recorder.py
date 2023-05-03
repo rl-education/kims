@@ -49,14 +49,14 @@ class StatsRecorder(object):
         if self.done:
             raise error.ResetNeeded(
                 "Trying to step environment which is currently done. While the monitor is active for {}, you cannot step beyond the end of an episode. Call 'env.reset()' to start the next episode.".format(
-                    self.env_id
-                )
+                    self.env_id,
+                ),
             )
         elif self.steps is None:
             raise error.ResetNeeded(
                 "Trying to step an environment before reset. While the monitor is active for {}, you must call 'env.reset()' before taking an initial step.".format(
-                    self.env_id
-                )
+                    self.env_id,
+                ),
             )
 
     def after_step(self, observation, reward, done, info):
@@ -79,8 +79,8 @@ class StatsRecorder(object):
         if self.done is not None and not self.done and self.steps > 0:
             raise error.Error(
                 "Tried to reset environment which is not done. While the monitor is active for {}, you cannot call reset() unless the episode is over.".format(
-                    self.env_id
-                )
+                    self.env_id,
+                ),
             )
 
         self.done = False

@@ -330,12 +330,12 @@ class BipedalWalker(gym.Env, EzPickle):
         init_x = TERRAIN_STEP * TERRAIN_STARTPAD / 2
         init_y = TERRAIN_HEIGHT + 2 * LEG_H
         self.hull = self.world.CreateDynamicBody(
-            position=(init_x, init_y), fixtures=HULL_FD
+            position=(init_x, init_y), fixtures=HULL_FD,
         )
         self.hull.color1 = (0.5, 0.4, 0.9)
         self.hull.color2 = (0.3, 0.3, 0.5)
         self.hull.ApplyForceToCenter(
-            (self.np_random.uniform(-INITIAL_RANDOM, INITIAL_RANDOM), 0), True
+            (self.np_random.uniform(-INITIAL_RANDOM, INITIAL_RANDOM), 0), True,
         )
 
         self.legs = []
@@ -411,19 +411,19 @@ class BipedalWalker(gym.Env, EzPickle):
         else:
             self.joints[0].motorSpeed = float(SPEED_HIP * np.sign(action[0]))
             self.joints[0].maxMotorTorque = float(
-                MOTORS_TORQUE * np.clip(np.abs(action[0]), 0, 1)
+                MOTORS_TORQUE * np.clip(np.abs(action[0]), 0, 1),
             )
             self.joints[1].motorSpeed = float(SPEED_KNEE * np.sign(action[1]))
             self.joints[1].maxMotorTorque = float(
-                MOTORS_TORQUE * np.clip(np.abs(action[1]), 0, 1)
+                MOTORS_TORQUE * np.clip(np.abs(action[1]), 0, 1),
             )
             self.joints[2].motorSpeed = float(SPEED_HIP * np.sign(action[2]))
             self.joints[2].maxMotorTorque = float(
-                MOTORS_TORQUE * np.clip(np.abs(action[2]), 0, 1)
+                MOTORS_TORQUE * np.clip(np.abs(action[2]), 0, 1),
             )
             self.joints[3].motorSpeed = float(SPEED_KNEE * np.sign(action[3]))
             self.joints[3].maxMotorTorque = float(
-                MOTORS_TORQUE * np.clip(np.abs(action[3]), 0, 1)
+                MOTORS_TORQUE * np.clip(np.abs(action[3]), 0, 1),
             )
 
         self.world.Step(1.0 / FPS, 6 * 30, 2 * 30)
@@ -467,7 +467,7 @@ class BipedalWalker(gym.Env, EzPickle):
             130 * pos[0] / SCALE
         )  # moving forward is a way to receive reward (normalized to get 300 on completion)
         shaping -= 5.0 * abs(
-            state[0]
+            state[0],
         )  # keep head straight, other than that and falling, any behavior is unpunished
 
         reward = 0
@@ -493,7 +493,7 @@ class BipedalWalker(gym.Env, EzPickle):
         if self.viewer is None:
             self.viewer = rendering.Viewer(VIEWPORT_W, VIEWPORT_H)
         self.viewer.set_bounds(
-            self.scroll, VIEWPORT_W / SCALE + self.scroll, 0, VIEWPORT_H / SCALE
+            self.scroll, VIEWPORT_W / SCALE + self.scroll, 0, VIEWPORT_H / SCALE,
         )
 
         self.viewer.draw_polygon(
@@ -511,7 +511,7 @@ class BipedalWalker(gym.Env, EzPickle):
             if x1 > self.scroll / 2 + VIEWPORT_W / SCALE:
                 continue
             self.viewer.draw_polygon(
-                [(p[0] + self.scroll / 2, p[1]) for p in poly], color=(1, 1, 1)
+                [(p[0] + self.scroll / 2, p[1]) for p in poly], color=(1, 1, 1),
             )
         for poly, color in self.terrain_poly:
             if poly[1][0] < self.scroll:
@@ -536,10 +536,10 @@ class BipedalWalker(gym.Env, EzPickle):
                 if type(f.shape) is circleShape:
                     t = rendering.Transform(translation=trans * f.shape.pos)
                     self.viewer.draw_circle(
-                        f.shape.radius, 30, color=obj.color1
+                        f.shape.radius, 30, color=obj.color1,
                     ).add_attr(t)
                     self.viewer.draw_circle(
-                        f.shape.radius, 30, color=obj.color2, filled=False, linewidth=2
+                        f.shape.radius, 30, color=obj.color2, filled=False, linewidth=2,
                     ).add_attr(t)
                 else:
                     path = [trans * v for v in f.shape.vertices]
@@ -551,7 +551,7 @@ class BipedalWalker(gym.Env, EzPickle):
         flagy2 = flagy1 + 50 / SCALE
         x = TERRAIN_STEP * 3
         self.viewer.draw_polyline(
-            [(x, flagy1), (x, flagy2)], color=(0, 0, 0), linewidth=2
+            [(x, flagy1), (x, flagy2)], color=(0, 0, 0), linewidth=2,
         )
         f = [
             (x, flagy2),

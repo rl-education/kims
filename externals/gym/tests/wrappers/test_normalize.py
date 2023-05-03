@@ -11,7 +11,7 @@ class DummyRewardEnv(gym.Env):
     def __init__(self, return_reward_idx=0):
         self.action_space = gym.spaces.Discrete(2)
         self.observation_space = gym.spaces.Box(
-            low=np.array([-1.0]), high=np.array([1.0])
+            low=np.array([-1.0]), high=np.array([1.0]),
         )
         self.returned_rewards = [0, 1, 2, 3, 4]
         self.return_reward_idx = return_reward_idx
@@ -102,7 +102,7 @@ def test_normalize_return_vector_env():
     assert_almost_equal(
         envs.return_rms.mean,
         np.mean(
-            [[1, 2], [2 + envs.gamma * 1, 3 + envs.gamma * 2]]
+            [[1, 2], [2 + envs.gamma * 1, 3 + envs.gamma * 2]],
         ),  # the mean of first and second returns [[1, 2], [2 + envs.gamma * 1, 3 + envs.gamma * 2]]
         decimal=4,
     )

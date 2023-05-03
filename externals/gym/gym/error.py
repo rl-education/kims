@@ -143,7 +143,7 @@ class InvalidRequestError(APIError):
         headers=None,
     ):
         super(InvalidRequestError, self).__init__(
-            message, http_body, http_status, json_body, headers
+            message, http_body, http_status, json_body, headers,
         )
         self.param = param
 

@@ -80,7 +80,7 @@ class ManipulateTouchSensorsEnv(manipulate.ManipulateEnv):
                         self.sim.model._site_name2id[
                             k.replace("robot0:TS_", "robot0:T_")
                         ],
-                    )
+                    ),
                 )
                 self._touch_sensor_id.append(v)
 
@@ -94,15 +94,15 @@ class ManipulateTouchSensorsEnv(manipulate.ManipulateEnv):
         self.observation_space = spaces.Dict(
             dict(
                 desired_goal=spaces.Box(
-                    -np.inf, np.inf, shape=obs["achieved_goal"].shape, dtype="float32"
+                    -np.inf, np.inf, shape=obs["achieved_goal"].shape, dtype="float32",
                 ),
                 achieved_goal=spaces.Box(
-                    -np.inf, np.inf, shape=obs["achieved_goal"].shape, dtype="float32"
+                    -np.inf, np.inf, shape=obs["achieved_goal"].shape, dtype="float32",
                 ),
                 observation=spaces.Box(
-                    -np.inf, np.inf, shape=obs["observation"].shape, dtype="float32"
+                    -np.inf, np.inf, shape=obs["observation"].shape, dtype="float32",
                 ),
-            )
+            ),
         )
 
     def _render_callback(self):
@@ -128,7 +128,7 @@ class ManipulateTouchSensorsEnv(manipulate.ManipulateEnv):
         elif self.touch_get_obs == "log":
             touch_values = np.log(self.sim.data.sensordata[self._touch_sensor_id] + 1.0)
         observation = np.concatenate(
-            [robot_qpos, robot_qvel, object_qvel, touch_values, achieved_goal]
+            [robot_qpos, robot_qvel, object_qvel, touch_values, achieved_goal],
         )
 
         return {
@@ -147,7 +147,7 @@ class HandBlockTouchSensorsEnv(ManipulateTouchSensorsEnv, utils.EzPickle):
         reward_type="sparse",
     ):
         utils.EzPickle.__init__(
-            self, target_position, target_rotation, touch_get_obs, reward_type
+            self, target_position, target_rotation, touch_get_obs, reward_type,
         )
         ManipulateTouchSensorsEnv.__init__(
             self,
@@ -169,7 +169,7 @@ class HandEggTouchSensorsEnv(ManipulateTouchSensorsEnv, utils.EzPickle):
         reward_type="sparse",
     ):
         utils.EzPickle.__init__(
-            self, target_position, target_rotation, touch_get_obs, reward_type
+            self, target_position, target_rotation, touch_get_obs, reward_type,
         )
         ManipulateTouchSensorsEnv.__init__(
             self,
@@ -191,7 +191,7 @@ class HandPenTouchSensorsEnv(ManipulateTouchSensorsEnv, utils.EzPickle):
         reward_type="sparse",
     ):
         utils.EzPickle.__init__(
-            self, target_position, target_rotation, touch_get_obs, reward_type
+            self, target_position, target_rotation, touch_get_obs, reward_type,
         )
         ManipulateTouchSensorsEnv.__init__(
             self,

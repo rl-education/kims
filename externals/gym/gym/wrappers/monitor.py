@@ -29,7 +29,7 @@ class Monitor(Wrapper):
     ):
         super(Monitor, self).__init__(env)
         warnings.warn(
-            "The Monitor wrapper is being deprecated in favor of gym.wrappers.RecordVideo and gym.wrappers.RecordEpisodeStatistics (see https://github.com/openai/gym/issues/2297)"
+            "The Monitor wrapper is being deprecated in favor of gym.wrappers.RecordVideo and gym.wrappers.RecordEpisodeStatistics (see https://github.com/openai/gym/issues/2297)",
         )
 
         self.videos = []
@@ -42,7 +42,7 @@ class Monitor(Wrapper):
         self.env_semantics_autoreset = env.metadata.get("semantics.autoreset")
 
         self._start(
-            directory, video_callable, force, resume, write_upon_reset, uid, mode
+            directory, video_callable, force, resume, write_upon_reset, uid, mode,
         )
 
     def step(self, action):
@@ -86,7 +86,7 @@ class Monitor(Wrapper):
         """
         if self.env.spec is None:
             logger.warn(
-                "Trying to monitor an environment which has no 'spec' set. This usually means you did not create it via 'gym.make', and is recommended only for advanced users."
+                "Trying to monitor an environment which has no 'spec' set. This usually means you did not create it via 'gym.make', and is recommended only for advanced users.",
             )
             env_id = "(unknown)"
         else:
@@ -105,8 +105,8 @@ class Monitor(Wrapper):
         elif not callable(video_callable):
             raise error.Error(
                 "You must provide a function, None, or False for video_callable, not {}: {}".format(
-                    type(video_callable), video_callable
-                )
+                    type(video_callable), video_callable,
+                ),
             )
         self.video_callable = video_callable
 
@@ -202,7 +202,7 @@ class Monitor(Wrapper):
             type = "t"
         else:
             raise error.Error(
-                'Invalid mode {}: must be "training" or "evaluation"', mode
+                'Invalid mode {}: must be "training" or "evaluation"', mode,
             )
         self.stats_recorder.type = type
 
@@ -260,7 +260,7 @@ class Monitor(Wrapper):
             base_path=os.path.join(
                 self.directory,
                 "{}.video.{}.video{:06}".format(
-                    self.file_prefix, self.file_infix, self.episode_id
+                    self.file_prefix, self.file_infix, self.episode_id,
                 ),
             ),
             metadata={"episode_id": self.episode_id},
@@ -272,7 +272,7 @@ class Monitor(Wrapper):
         self.video_recorder.close()
         if self.video_recorder.functional:
             self.videos.append(
-                (self.video_recorder.path, self.video_recorder.metadata_path)
+                (self.video_recorder.path, self.video_recorder.metadata_path),
             )
 
     def _video_enabled(self):
@@ -473,15 +473,15 @@ def collapse_env_infos(env_infos, training_dir):
         if first != other:
             raise error.Error(
                 "Found two unequal env_infos: {} and {}. This usually indicates that your training directory {} has commingled results from multiple runs.".format(
-                    first, other, training_dir
-                )
+                    first, other, training_dir,
+                ),
             )
 
     for key in ["env_id", "gym_version"]:
         if key not in first:
             raise error.Error(
                 "env_info {} from training directory {} is missing expected key {}. This is unexpected and likely indicates a bug in gym.".format(
-                    first, training_dir, key
-                )
+                    first, training_dir, key,
+                ),
             )
     return first

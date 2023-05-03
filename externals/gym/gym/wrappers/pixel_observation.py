@@ -14,7 +14,7 @@ class PixelObservationWrapper(ObservationWrapper):
     """Augment observations by pixel values."""
 
     def __init__(
-        self, env, pixels_only=True, render_kwargs=None, pixel_keys=("pixels",)
+        self, env, pixels_only=True, render_kwargs=None, pixel_keys=("pixels",),
     ):
         """Initializes a new pixel Wrapper.
 
@@ -68,7 +68,7 @@ class PixelObservationWrapper(ObservationWrapper):
             overlapping_keys = set(pixel_keys) & set(invalid_keys)
             if overlapping_keys:
                 raise ValueError(
-                    "Duplicate or reserved pixel keys {!r}.".format(overlapping_keys)
+                    "Duplicate or reserved pixel keys {!r}.".format(overlapping_keys),
                 )
 
         if pixels_only:
@@ -93,7 +93,7 @@ class PixelObservationWrapper(ObservationWrapper):
                 raise TypeError(pixels.dtype)
 
             pixels_space = spaces.Box(
-                shape=pixels.shape, low=low, high=high, dtype=pixels.dtype
+                shape=pixels.shape, low=low, high=high, dtype=pixels.dtype,
             )
             pixels_spaces[pixel_key] = pixels_space
 

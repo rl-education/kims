@@ -62,7 +62,7 @@ class SimpleMultiObsEnv(gym.Env):
             spaces={
                 "vec": spaces.Box(0, 1, (self.vector_size,), dtype=np.float64),
                 "img": spaces.Box(0, 255, self.img_size, dtype=np.uint8),
-            }
+            },
         )
         self.count = 0
         # Timeout

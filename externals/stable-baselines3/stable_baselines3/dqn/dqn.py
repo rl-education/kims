@@ -158,7 +158,7 @@ class DQN(OffPolicyAlgorithm):
                     "The number of environments used is greater than the target network "
                     f"update interval ({self.n_envs} > {self.target_update_interval}), "
                     "therefore the target network will be updated after each call to env.step() "
-                    f"which corresponds to {self.n_envs} steps."
+                    f"which corresponds to {self.n_envs} steps.",
                 )
 
             self.target_update_interval = max(self.target_update_interval // self.n_envs, 1)

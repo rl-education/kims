@@ -133,7 +133,7 @@ class CarRacing(gym.Env, EzPickle):
         self.prev_reward = 0.0
         self.verbose = verbose
         self.fd_tile = fixtureDef(
-            shape=polygonShape(vertices=[(0, 0), (1, 0), (1, -1), (0, -1)])
+            shape=polygonShape(vertices=[(0, 0), (1, 0), (1, -1), (0, -1)]),
         )
 
         self.action_space = spaces.Box(
@@ -142,7 +142,7 @@ class CarRacing(gym.Env, EzPickle):
         )  # steer, gas, brake
 
         self.observation_space = spaces.Box(
-            low=0, high=255, shape=(STATE_H, STATE_W, 3), dtype=np.uint8
+            low=0, high=255, shape=(STATE_H, STATE_W, 3), dtype=np.uint8,
         )
 
     def seed(self, seed=None):
@@ -267,7 +267,7 @@ class CarRacing(gym.Env, EzPickle):
         # Length of perpendicular jump to put together head and tail
         well_glued_together = np.sqrt(
             np.square(first_perp_x * (track[0][2] - track[-1][2]))
-            + np.square(first_perp_y * (track[0][3] - track[-1][3]))
+            + np.square(first_perp_y * (track[0][3] - track[-1][3])),
         )
         if well_glued_together > TRACK_DETAIL_STEP:
             return False
@@ -338,7 +338,7 @@ class CarRacing(gym.Env, EzPickle):
                     y2 + side * (TRACK_WIDTH + BORDER) * math.sin(beta2),
                 )
                 self.road_poly.append(
-                    ([b1_l, b1_r, b2_r, b2_l], (1, 1, 1) if i % 2 == 0 else (1, 0, 0))
+                    ([b1_l, b1_r, b2_r, b2_l], (1, 1, 1) if i % 2 == 0 else (1, 0, 0)),
                 )
         self.track = track
         return True
@@ -358,7 +358,7 @@ class CarRacing(gym.Env, EzPickle):
             if self.verbose == 1:
                 print(
                     "retry to generate track (normal if there are not many"
-                    "instances of this message)"
+                    "instances of this message)",
                 )
         self.car = Car(self.world, *self.track[0][1:4])
 
@@ -517,7 +517,7 @@ class CarRacing(gym.Env, EzPickle):
                         k * x + k,
                         k * y + k,
                         0,
-                    ]
+                    ],
                 )
 
         for poly, color in self.road_poly:
@@ -526,7 +526,7 @@ class CarRacing(gym.Env, EzPickle):
                 polygons_.extend([p[0], p[1], 0])
 
         vl = pyglet.graphics.vertex_list(
-            len(polygons_) // 3, ("v3f", polygons_), ("c4f", colors)
+            len(polygons_) // 3, ("v3f", polygons_), ("c4f", colors),
         )  # gl.GL_QUADS,
         vl.draw(gl.GL_QUADS)
         vl.delete()
@@ -553,7 +553,7 @@ class CarRacing(gym.Env, EzPickle):
                     (place + 0) * s,
                     h,
                     0,
-                ]
+                ],
             )
 
         def horiz_ind(place, val, color):
@@ -572,12 +572,12 @@ class CarRacing(gym.Env, EzPickle):
                     (place + 0) * s,
                     2 * h,
                     0,
-                ]
+                ],
             )
 
         true_speed = np.sqrt(
             np.square(self.car.hull.linearVelocity[0])
-            + np.square(self.car.hull.linearVelocity[1])
+            + np.square(self.car.hull.linearVelocity[1]),
         )
 
         vertical_ind(5, 0.02 * true_speed, (1, 1, 1))
@@ -588,7 +588,7 @@ class CarRacing(gym.Env, EzPickle):
         horiz_ind(20, -10.0 * self.car.wheels[0].joint.angle, (0, 1, 0))
         horiz_ind(30, -0.8 * self.car.hull.angularVelocity, (1, 0, 0))
         vl = pyglet.graphics.vertex_list(
-            len(polygons) // 3, ("v3f", polygons), ("c4f", colors)
+            len(polygons) // 3, ("v3f", polygons), ("c4f", colors),
         )  # gl.GL_QUADS,
         vl.draw(gl.GL_QUADS)
         vl.delete()

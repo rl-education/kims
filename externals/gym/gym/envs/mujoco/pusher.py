@@ -37,7 +37,7 @@ class PusherEnv(mujoco_env.MujocoEnv, utils.EzPickle):
                 [
                     self.np_random.uniform(low=-0.3, high=0, size=1),
                     self.np_random.uniform(low=-0.2, high=0.2, size=1),
-                ]
+                ],
             )
             if np.linalg.norm(self.cylinder_pos - self.goal_pos) > 0.17:
                 break
@@ -45,7 +45,7 @@ class PusherEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         qpos[-4:-2] = self.cylinder_pos
         qpos[-2:] = self.goal_pos
         qvel = self.init_qvel + self.np_random.uniform(
-            low=-0.005, high=0.005, size=self.model.nv
+            low=-0.005, high=0.005, size=self.model.nv,
         )
         qvel[-4:] = 0
         self.set_state(qpos, qvel)
@@ -59,5 +59,5 @@ class PusherEnv(mujoco_env.MujocoEnv, utils.EzPickle):
                 self.get_body_com("tips_arm"),
                 self.get_body_com("object"),
                 self.get_body_com("goal"),
-            ]
+            ],
         )

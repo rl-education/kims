@@ -54,7 +54,7 @@ class DummyDictEnv(gym.Env):
                 "observation": spaces.Box(low=-20.0, high=20.0, shape=(4,), dtype=np.float32),
                 "achieved_goal": spaces.Box(low=-20.0, high=20.0, shape=(4,), dtype=np.float32),
                 "desired_goal": spaces.Box(low=-20.0, high=20.0, shape=(4,), dtype=np.float32),
-            }
+            },
         )
         self.action_space = spaces.Box(low=-1, high=1, shape=(3,), dtype=np.float32)
 
@@ -84,7 +84,7 @@ class DummyMixedDictEnv(gym.Env):
                 "obs1": spaces.Box(low=-20.0, high=20.0, shape=(4,), dtype=np.float32),
                 "obs2": spaces.Discrete(1),
                 "obs3": spaces.Box(low=-20.0, high=20.0, shape=(4,), dtype=np.float32),
-            }
+            },
         )
         self.action_space = spaces.Box(low=-1, high=1, shape=(3,), dtype=np.float32)
 

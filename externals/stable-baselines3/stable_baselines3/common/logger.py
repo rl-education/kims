@@ -104,7 +104,7 @@ class FormatUnsupportedError(NotImplementedError):
             format_str = f"format {unsupported_formats[0]} is"
         super().__init__(
             f"The {format_str} not supported for the {value_description} value logged.\n"
-            f"You can exclude formats via the `exclude` parameter of the logger's `record` function."
+            f"You can exclude formats via the `exclude` parameter of the logger's `record` function.",
         )
 
 
@@ -204,7 +204,7 @@ class HumanOutputFormat(KVWriter, SeqWriter):
             truncated_key = self._truncate(key)
             if (tag, truncated_key) in key2str:
                 raise ValueError(
-                    f"Key '{key}' truncated to '{truncated_key}' that already exists. Consider increasing `max_length`."
+                    f"Key '{key}' truncated to '{truncated_key}' that already exists. Consider increasing `max_length`.",
                 )
             key2str[(tag, truncated_key)] = self._truncate(value_str)
 
@@ -258,7 +258,7 @@ class HumanOutputFormat(KVWriter, SeqWriter):
 
 
 def filter_excluded_keys(
-    key_values: Dict[str, Any], key_excluded: Dict[str, Union[str, Tuple[str, ...]]], _format: str
+    key_values: Dict[str, Any], key_excluded: Dict[str, Union[str, Tuple[str, ...]]], _format: str,
 ) -> Dict[str, Any]:
     """
     Filters the keys specified by ``key_exclude`` for the specified format

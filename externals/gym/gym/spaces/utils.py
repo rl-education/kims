@@ -146,7 +146,7 @@ def unflatten_dict(space, x):
         [
             (key, unflatten(s, flattened))
             for flattened, (key, s) in zip(list_flattened, space.spaces.items())
-        ]
+        ],
     )
 
 

@@ -35,7 +35,7 @@ expected_types = [
         [
             ("position", OrderedDict([("x", Array("i", 1)), ("y", Array("i", 1))])),
             ("velocity", (Array("i", 1), Array("B", 1))),
-        ]
+        ],
     ),
 ]
 
@@ -47,7 +47,7 @@ expected_types = [
     ids=[space.__class__.__name__ for space in spaces],
 )
 @pytest.mark.parametrize(
-    "ctx", [None, "fork", "spawn"], ids=["default", "fork", "spawn"]
+    "ctx", [None, "fork", "spawn"], ids=["default", "fork", "spawn"],
 )
 def test_create_shared_memory(space, expected_type, n, ctx):
     def assert_nested_type(lhs, rhs, n):
@@ -78,7 +78,7 @@ def test_create_shared_memory(space, expected_type, n, ctx):
 
 @pytest.mark.parametrize("n", [1, 8])
 @pytest.mark.parametrize(
-    "ctx", [None, "fork", "spawn"], ids=["default", "fork", "spawn"]
+    "ctx", [None, "fork", "spawn"], ids=["default", "fork", "spawn"],
 )
 @pytest.mark.parametrize("space", custom_spaces)
 def test_create_shared_memory_custom_space(n, ctx, space):
@@ -88,7 +88,7 @@ def test_create_shared_memory_custom_space(n, ctx, space):
 
 
 @pytest.mark.parametrize(
-    "space", spaces, ids=[space.__class__.__name__ for space in spaces]
+    "space", spaces, ids=[space.__class__.__name__ for space in spaces],
 )
 def test_write_to_shared_memory(space):
     def assert_nested_equal(lhs, rhs):
@@ -126,7 +126,7 @@ def test_write_to_shared_memory(space):
 
 
 @pytest.mark.parametrize(
-    "space", spaces, ids=[space.__class__.__name__ for space in spaces]
+    "space", spaces, ids=[space.__class__.__name__ for space in spaces],
 )
 def test_read_from_shared_memory(space):
     def assert_nested_equal(lhs, rhs, space, n):
@@ -135,14 +135,14 @@ def test_read_from_shared_memory(space):
             assert isinstance(lhs, tuple)
             for i in range(len(lhs)):
                 assert_nested_equal(
-                    lhs[i], [rhs_[i] for rhs_ in rhs], space.spaces[i], n
+                    lhs[i], [rhs_[i] for rhs_ in rhs], space.spaces[i], n,
                 )
 
         elif isinstance(space, Dict):
             assert isinstance(lhs, OrderedDict)
             for key in lhs.keys():
                 assert_nested_equal(
-                    lhs[key], [rhs_[key] for rhs_ in rhs], space.spaces[key], n
+                    lhs[key], [rhs_[key] for rhs_ in rhs], space.spaces[key], n,
                 )
 
         elif isinstance(space, _BaseGymSpaces):

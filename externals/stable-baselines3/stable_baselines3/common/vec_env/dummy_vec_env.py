@@ -32,7 +32,7 @@ class DummyVecEnv(VecEnv):
                 "You should replace `lambda: env` by a `make_env` function that "
                 "creates a new instance of the environment at every call "
                 "(using `gym.make()` for instance). You can take a look at the documentation for an example. "
-                "Please read https://github.com/DLR-RM/stable-baselines3/issues/1151 for more information."
+                "Please read https://github.com/DLR-RM/stable-baselines3/issues/1151 for more information.",
             )
         env = self.envs[0]
         VecEnv.__init__(self, len(env_fns), env.observation_space, env.action_space)
@@ -52,7 +52,7 @@ class DummyVecEnv(VecEnv):
     def step_wait(self) -> VecEnvStepReturn:
         for env_idx in range(self.num_envs):
             obs, self.buf_rews[env_idx], self.buf_dones[env_idx], self.buf_infos[env_idx] = self.envs[env_idx].step(
-                self.actions[env_idx]
+                self.actions[env_idx],
             )
             if self.buf_dones[env_idx]:
                 # save final observation where user can get it, then reset

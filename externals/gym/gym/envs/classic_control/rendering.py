@@ -56,8 +56,8 @@ def get_display(spec):
     else:
         raise error.Error(
             "Invalid display specification: {}. (Must be a string like :0 or None.)".format(
-                spec
-            )
+                spec,
+            ),
         )
 
 
@@ -109,7 +109,7 @@ class Viewer(object):
         scalex = self.width / (right - left)
         scaley = self.height / (top - bottom)
         self.transform = Transform(
-            translation=(-left * scalex, -bottom * scaley), scale=(scalex, scaley)
+            translation=(-left * scalex, -bottom * scaley), scale=(scalex, scaley),
         )
 
     def add_geom(self, geom):
@@ -231,7 +231,7 @@ class Transform(Attr):
     def enable(self):
         glPushMatrix()
         glTranslatef(
-            self.translation[0], self.translation[1], 0
+            self.translation[0], self.translation[1], 0,
         )  # translate to GL loc ppint
         glRotatef(RAD2DEG * self.rotation, 0, 0, 1.0)
         glScalef(self.scale[0], self.scale[1], 1)
@@ -393,7 +393,7 @@ class Image(Geom):
 
     def render1(self):
         self.img.blit(
-            -self.width / 2, -self.height / 2, width=self.width, height=self.height
+            -self.width / 2, -self.height / 2, width=self.width, height=self.height,
         )
 
 
@@ -436,7 +436,7 @@ class SimpleImageViewer(object):
 
         assert len(arr.shape) == 3, "You passed in an image with the wrong number shape"
         image = pyglet.image.ImageData(
-            arr.shape[1], arr.shape[0], "RGB", arr.tobytes(), pitch=arr.shape[1] * -3
+            arr.shape[1], arr.shape[0], "RGB", arr.tobytes(), pitch=arr.shape[1] * -3,
         )
         texture = image.get_texture()
         gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_NEAREST)

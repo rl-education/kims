@@ -11,7 +11,7 @@ def test_transform_observation(env_id):
     affine_transform = lambda x: 3 * x + 2
     env = gym.make(env_id)
     wrapped_env = TransformObservation(
-        gym.make(env_id), lambda obs: affine_transform(obs)
+        gym.make(env_id), lambda obs: affine_transform(obs),
     )
 
     env.seed(0)

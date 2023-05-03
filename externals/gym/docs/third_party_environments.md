@@ -109,7 +109,7 @@ https://github.com/dimikout3/MarsExplorer
 
 Mars Explorer is an openai-gym compatible environment designed and developed as an initial endeavor to bridge the gap between powerful Deep Reinforcement Learning methodologies and the problem of exploration/coverage of an unknown terrain.
 
-### panda-gym 
+### panda-gym
 
 https://github.com/qgallouedec/panda-gym/
 

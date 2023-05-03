@@ -27,8 +27,8 @@ OBSERVATION_SPACES = (
                     ("key1", Box(shape=(2, 3), low=0, high=0, dtype=np.float32)),
                     ("key2", Box(shape=(), low=1, high=1, dtype=np.float32)),
                     ("key3", Box(shape=(2,), low=2, high=2, dtype=np.float32)),
-                ]
-            )
+                ],
+            ),
         ),
         True,
     ),
@@ -39,8 +39,8 @@ OBSERVATION_SPACES = (
                     ("key2", Box(shape=(), low=0, high=0, dtype=np.float32)),
                     ("key3", Box(shape=(2,), low=1, high=1, dtype=np.float32)),
                     ("key1", Box(shape=(2, 3), low=2, high=2, dtype=np.float32)),
-                ]
-            )
+                ],
+            ),
         ),
         True,
     ),
@@ -50,7 +50,7 @@ OBSERVATION_SPACES = (
                 "key1": Box(shape=(2, 3), low=-1, high=1, dtype=np.float32),
                 "key2": Box(shape=(), low=-1, high=1, dtype=np.float32),
                 "key3": Box(shape=(2,), low=-1, high=1, dtype=np.float32),
-            }
+            },
         ),
         False,
     ),

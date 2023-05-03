@@ -143,7 +143,7 @@ class FetchEnv(robot_env.RobotEnv):
                 object_velr.ravel(),
                 grip_velp,
                 gripper_vel,
-            ]
+            ],
         )
 
         return {
@@ -176,7 +176,7 @@ class FetchEnv(robot_env.RobotEnv):
             object_xpos = self.initial_gripper_xpos[:2]
             while np.linalg.norm(object_xpos - self.initial_gripper_xpos[:2]) < 0.1:
                 object_xpos = self.initial_gripper_xpos[:2] + self.np_random.uniform(
-                    -self.obj_range, self.obj_range, size=2
+                    -self.obj_range, self.obj_range, size=2,
                 )
             object_qpos = self.sim.data.get_joint_qpos("object0:joint")
             assert object_qpos.shape == (7,)
@@ -189,7 +189,7 @@ class FetchEnv(robot_env.RobotEnv):
     def _sample_goal(self):
         if self.has_object:
             goal = self.initial_gripper_xpos[:3] + self.np_random.uniform(
-                -self.target_range, self.target_range, size=3
+                -self.target_range, self.target_range, size=3,
             )
             goal += self.target_offset
             goal[2] = self.height_offset
@@ -197,7 +197,7 @@ class FetchEnv(robot_env.RobotEnv):
                 goal[2] += self.np_random.uniform(0, 0.45)
         else:
             goal = self.initial_gripper_xpos[:3] + self.np_random.uniform(
-                -self.target_range, self.target_range, size=3
+                -self.target_range, self.target_range, size=3,
             )
         return goal.copy()
 
@@ -213,7 +213,7 @@ class FetchEnv(robot_env.RobotEnv):
 
         # Move end effector into position.
         gripper_target = np.array(
-            [-0.498, 0.005, -0.431 + self.gripper_extra_height]
+            [-0.498, 0.005, -0.431 + self.gripper_extra_height],
         ) + self.sim.data.get_site_xpos("robot0:grip")
         gripper_rotation = np.array([1.0, 0.0, 1.0, 0.0])
         self.sim.data.set_mocap_pos("robot0:mocap", gripper_target)

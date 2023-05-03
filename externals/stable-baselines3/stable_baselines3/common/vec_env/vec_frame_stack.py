@@ -20,7 +20,7 @@ class VecFrameStack(VecEnvWrapper):
 
     def __init__(self, venv: VecEnv, n_stack: int, channels_order: Optional[Union[str, Mapping[str, str]]] = None) -> None:
         assert isinstance(
-            venv.observation_space, (spaces.Box, spaces.Dict)
+            venv.observation_space, (spaces.Box, spaces.Dict),
         ), "VecFrameStack only works with gym.spaces.Box and gym.spaces.Dict observation spaces"
 
         self.stacked_obs = StackedObservations(venv.num_envs, n_stack, venv.observation_space, channels_order)
@@ -29,7 +29,7 @@ class VecFrameStack(VecEnvWrapper):
 
     def step_wait(
         self,
-    ) -> Tuple[Union[np.ndarray, Dict[str, np.ndarray]], np.ndarray, np.ndarray, List[Dict[str, Any]],]:
+    ) -> Tuple[Union[np.ndarray, Dict[str, np.ndarray]], np.ndarray, np.ndarray, List[Dict[str, Any]]]:
         observations, rewards, dones, infos = self.venv.step_wait()
         observations, infos = self.stacked_obs.update(observations, dones, infos)
         return observations, rewards, dones, infos

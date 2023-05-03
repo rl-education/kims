@@ -48,7 +48,7 @@ class Box(Space):
             ), "low.shape doesn't match high.shape"
         else:
             raise ValueError(
-                "shape must be provided or inferred from the shapes of low or high"
+                "shape must be provided or inferred from the shapes of low or high",
             )
 
         if np.isscalar(low):
@@ -72,7 +72,7 @@ class Box(Space):
         dtype_precision = _get_precision(self.dtype)
         if min(low_precision, high_precision) > dtype_precision:
             logger.warn(
-                "Box bound precision lowered by casting to {}".format(self.dtype)
+                "Box bound precision lowered by casting to {}".format(self.dtype),
             )
         self.low = self.low.astype(self.dtype)
         self.high = self.high.astype(self.dtype)
@@ -131,7 +131,7 @@ class Box(Space):
         )
 
         sample[bounded] = self.np_random.uniform(
-            low=self.low[bounded], high=high[bounded], size=bounded[bounded].shape
+            low=self.low[bounded], high=high[bounded], size=bounded[bounded].shape,
         )
         if self.dtype.kind == "i":
             sample = np.floor(sample)

@@ -7,8 +7,8 @@ try:
 except ImportError as e:
     raise error.DependencyNotInstalled(
         "{}. (HINT: you need to install mujoco_py, and also perform the setup instructions here: https://github.com/openai/mujoco-py/.)".format(
-            e
-        )
+            e,
+        ),
     )
 
 
@@ -82,7 +82,7 @@ def reset_mocap2body_xpos(sim):
     ):
         return
     for eq_type, obj1_id, obj2_id in zip(
-        sim.model.eq_type, sim.model.eq_obj1id, sim.model.eq_obj2id
+        sim.model.eq_type, sim.model.eq_obj1id, sim.model.eq_obj2id,
     ):
         if eq_type != mujoco_py.const.EQ_WELD:
             continue

@@ -1,6 +1,6 @@
 # API
 ## Initializing Environments
-Initializing environment is very easy in Gym and can be done via: 
+Initializing environment is very easy in Gym and can be done via:
 
 ```python
 import gym
@@ -14,9 +14,9 @@ This example will run an instance of `CartPole-v0` environment for 1000 timestep
 import gym
 env = gym.make('CartPole-v0')
 env.reset()
-for _ in range(1000): 
+for _ in range(1000):
 	env.render()  # by default `mode="human"`(GUI), you can pass `mode="rbg_array"` to retrieve an image instead
-	env.step(env.action_space.sample())  # take a random action 	
+	env.step(env.action_space.sample())  # take a random action
 env.close()
 ```
 
@@ -25,12 +25,12 @@ The output should look something like this
 ![cartpole-no-reset](https://user-images.githubusercontent.com/28860173/129241283-70069f7c-453d-4670-a226-854203bd8a1b.gif)
 
 
-The commonly used methods are: 
+The commonly used methods are:
 
 `reset()` resets the environment to its initial state and returns the observation corresponding to the initial state
-`step(action)` takes an action as an input and implements that action in the environment. This method returns a set of four values 
+`step(action)` takes an action as an input and implements that action in the environment. This method returns a set of four values
 `render()` renders the environment
-	
+
 - `observation` (**object**) : an environment specific object representation your observation of the environment after the step is taken. Its often aliased as the next state after the action has been taken
 - `reward`(**float**) : immediate reward achieved by the previous action. Actual value and range will varies between environments, but the final goal is always to increase your total reward
 - `done`(**boolean**): whether it’s time to `reset` the environment again. Most (but not all) tasks are divided up into well-defined episodes, and `done` being `True` indicates the episode has terminated. (For example, perhaps the pole tipped too far, or you lost your last life.)
@@ -59,7 +59,7 @@ print(env.observation_space.low)
 ```
 - There are multiple types of Space types inherently available in gym:
 	- `Box` describes an n-dimensional continuous space. Its a bounded space where we can define the upper and lower limit which describe the valid values our observations can take.
-	- `Discrete` describes a discrete space where { 0, 1, ......., n-1} are the possible values our observation/action can take. 
+	- `Discrete` describes a discrete space where { 0, 1, ......., n-1} are the possible values our observation/action can take.
 	- `Dict` represents a dictionary of simple spaces.
 	- `Tuple` represents a tuple of simple spaces
 	- `MultiBinary` creates a n-shape binary space. Argument n can be a number or a `list` of numbers
@@ -89,7 +89,7 @@ print(env.observation_space.low)
 	print(observation_space.sample())
 	#> [3 0 0]
 	```
-- `reward_range`:  returns a tuple corresponding to min and max possible rewards. Default range is set to `[-inf,+inf]`. You can set it if you want a narrower range 
+- `reward_range`:  returns a tuple corresponding to min and max possible rewards. Default range is set to `[-inf,+inf]`. You can set it if you want a narrower range
 - `close()` : Override close in your subclass to perform any necessary cleanup
 - `seed()`: Sets the seed for this env's random number generator
 

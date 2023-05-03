@@ -49,7 +49,7 @@ class BitFlippingEnv(Env):
                     "observation": spaces.Discrete(2**n_bits),
                     "achieved_goal": spaces.Discrete(2**n_bits),
                     "desired_goal": spaces.Discrete(2**n_bits),
-                }
+                },
             )
         elif image_obs_space:
             # When using image as input,
@@ -75,7 +75,7 @@ class BitFlippingEnv(Env):
                         shape=self.image_shape,
                         dtype=np.uint8,
                     ),
-                }
+                },
             )
         else:
             self.observation_space = spaces.Dict(
@@ -83,7 +83,7 @@ class BitFlippingEnv(Env):
                     "observation": spaces.MultiBinary(n_bits),
                     "achieved_goal": spaces.MultiBinary(n_bits),
                     "desired_goal": spaces.MultiBinary(n_bits),
-                }
+                },
             )
 
         self.obs_space = spaces.MultiBinary(n_bits)
@@ -154,7 +154,7 @@ class BitFlippingEnv(Env):
                 ("observation", self.convert_if_needed(self.state.copy())),
                 ("achieved_goal", self.convert_if_needed(self.state.copy())),
                 ("desired_goal", self.convert_if_needed(self.desired_goal.copy())),
-            ]
+            ],
         )
 
     def reset(self) -> Dict[str, Union[int, np.ndarray]]:
@@ -177,7 +177,7 @@ class BitFlippingEnv(Env):
         return obs, reward, done, info
 
     def compute_reward(
-        self, achieved_goal: Union[int, np.ndarray], desired_goal: Union[int, np.ndarray], _info: Optional[Dict[str, Any]]
+        self, achieved_goal: Union[int, np.ndarray], desired_goal: Union[int, np.ndarray], _info: Optional[Dict[str, Any]],
     ) -> np.float32:
         # As we are using a vectorized version, we need to keep track of the `batch_size`
         if isinstance(achieved_goal, int):

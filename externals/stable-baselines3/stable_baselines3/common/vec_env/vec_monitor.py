@@ -60,7 +60,7 @@ class VecMonitor(VecEnvWrapper):
 
         if filename:
             self.results_writer = ResultsWriter(
-                filename, header={"t_start": self.t_start, "env_id": env_id}, extra_keys=info_keywords
+                filename, header={"t_start": self.t_start, "env_id": env_id}, extra_keys=info_keywords,
             )
         else:
             self.results_writer = None

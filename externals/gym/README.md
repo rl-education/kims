@@ -17,11 +17,11 @@ We support Python 3.6, 3.7, 3.8 and 3.9 on Linux and macOS. We will accept PRs r
 The Gym API's API models environments as simple Python `env` classes. Creating environment instances and interacting with them is very simple- here's an example using the "CartPole-v1" environment:
 
 ```python
-import gym 
+import gym
 env = gym.make('CartPole-v1')
 
-# env is created, now we can use it: 
-for episode in range(10): 
+# env is created, now we can use it:
+for episode in range(10):
     obs = env.reset()
     for step in range(50):
         action = env.action_space.sample()  # or given a custom model, action = policy(observation)

@@ -105,7 +105,7 @@ class LunarLander(gym.Env, EzPickle):
 
         # useful range is -1 .. +1, but spikes can be higher
         self.observation_space = spaces.Box(
-            -np.inf, np.inf, shape=(8,), dtype=np.float32
+            -np.inf, np.inf, shape=(8,), dtype=np.float32,
         )
 
         if self.continuous:
@@ -161,7 +161,7 @@ class LunarLander(gym.Env, EzPickle):
         ]
 
         self.moon = self.world.CreateStaticBody(
-            shapes=edgeShape(vertices=[(0, 0), (W, 0)])
+            shapes=edgeShape(vertices=[(0, 0), (W, 0)]),
         )
         self.sky_polys = []
         for i in range(CHUNKS - 1):
@@ -179,7 +179,7 @@ class LunarLander(gym.Env, EzPickle):
             angle=0.0,
             fixtures=fixtureDef(
                 shape=polygonShape(
-                    vertices=[(x / SCALE, y / SCALE) for x, y in LANDER_POLY]
+                    vertices=[(x / SCALE, y / SCALE) for x, y in LANDER_POLY],
                 ),
                 density=5.0,
                 friction=0.1,
@@ -415,10 +415,10 @@ class LunarLander(gym.Env, EzPickle):
                 if type(f.shape) is circleShape:
                     t = rendering.Transform(translation=trans * f.shape.pos)
                     self.viewer.draw_circle(
-                        f.shape.radius, 20, color=obj.color1
+                        f.shape.radius, 20, color=obj.color1,
                     ).add_attr(t)
                     self.viewer.draw_circle(
-                        f.shape.radius, 20, color=obj.color2, filled=False, linewidth=2
+                        f.shape.radius, 20, color=obj.color2, filled=False, linewidth=2,
                     ).add_attr(t)
                 else:
                     path = [trans * v for v in f.shape.vertices]
@@ -478,7 +478,7 @@ def heuristic(env, s):
     if angle_targ < -0.4:
         angle_targ = -0.4
     hover_targ = 0.55 * np.abs(
-        s[0]
+        s[0],
     )  # target y should be proportional to horizontal offset
 
     angle_todo = (angle_targ - s[4]) * 0.5 - (s[5]) * 1.0

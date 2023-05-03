@@ -23,7 +23,7 @@ class FilterObservation(ObservationWrapper):
 
         wrapped_observation_space = env.observation_space
         assert isinstance(
-            wrapped_observation_space, spaces.Dict
+            wrapped_observation_space, spaces.Dict,
         ), "FilterObservationWrapper is only usable with dict observations."
 
         observation_keys = wrapped_observation_space.spaces.keys()
@@ -43,7 +43,7 @@ class FilterObservation(ObservationWrapper):
                     filter_keys=filter_keys,
                     observation_keys=observation_keys,
                     missing_keys=missing_keys,
-                )
+                ),
             )
 
         self.observation_space = type(wrapped_observation_space)(
@@ -51,7 +51,7 @@ class FilterObservation(ObservationWrapper):
                 (name, copy.deepcopy(space))
                 for name, space in wrapped_observation_space.spaces.items()
                 if name in filter_keys
-            ]
+            ],
         )
 
         self._env = env
@@ -67,6 +67,6 @@ class FilterObservation(ObservationWrapper):
                 (name, value)
                 for name, value in observation.items()
                 if name in self._filter_keys
-            ]
+            ],
         )
         return observation

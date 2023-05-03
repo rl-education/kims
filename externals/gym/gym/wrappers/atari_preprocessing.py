@@ -97,7 +97,7 @@ class AtariPreprocessing(gym.Wrapper):
         if grayscale_obs and not grayscale_newaxis:
             _shape = _shape[:-1]  # Remove channel axis
         self.observation_space = Box(
-            low=_low, high=_high, shape=_shape, dtype=_obs_dtype
+            low=_low, high=_high, shape=_shape, dtype=_obs_dtype,
         )
 
     def step(self, action):

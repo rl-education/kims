@@ -44,12 +44,12 @@ class ThrowerEnv(mujoco_env.MujocoEnv, utils.EzPickle):
             [
                 self.np_random.uniform(low=-0.3, high=0.3),
                 self.np_random.uniform(low=-0.3, high=0.3),
-            ]
+            ],
         )
 
         qpos[-9:-7] = self.goal
         qvel = self.init_qvel + self.np_random.uniform(
-            low=-0.005, high=0.005, size=self.model.nv
+            low=-0.005, high=0.005, size=self.model.nv,
         )
         qvel[7:] = 0
         self.set_state(qpos, qvel)
@@ -63,5 +63,5 @@ class ThrowerEnv(mujoco_env.MujocoEnv, utils.EzPickle):
                 self.get_body_com("r_wrist_roll_link"),
                 self.get_body_com("ball"),
                 self.get_body_com("goal"),
-            ]
+            ],
         )

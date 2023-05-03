@@ -89,7 +89,7 @@ class AcrobotEnv(core.Env):
     def __init__(self):
         self.viewer = None
         high = np.array(
-            [1.0, 1.0, 1.0, 1.0, self.MAX_VEL_1, self.MAX_VEL_2], dtype=np.float32
+            [1.0, 1.0, 1.0, 1.0, self.MAX_VEL_1, self.MAX_VEL_2], dtype=np.float32,
         )
         low = -high
         self.observation_space = spaces.Box(low=low, high=high, dtype=np.float32)
@@ -103,7 +103,7 @@ class AcrobotEnv(core.Env):
 
     def reset(self):
         self.state = self.np_random.uniform(low=-0.1, high=0.1, size=(4,)).astype(
-            np.float32
+            np.float32,
         )
         return self._get_ob()
 
@@ -114,7 +114,7 @@ class AcrobotEnv(core.Env):
         # Add noise to the force action
         if self.torque_noise_max > 0:
             torque += self.np_random.uniform(
-                -self.torque_noise_max, self.torque_noise_max
+                -self.torque_noise_max, self.torque_noise_max,
             )
 
         # Now, augment the state with our force action so it can be passed to
@@ -135,7 +135,7 @@ class AcrobotEnv(core.Env):
     def _get_ob(self):
         s = self.state
         return np.array(
-            [cos(s[0]), sin(s[0]), cos(s[1]), sin(s[1]), s[2], s[3]], dtype=np.float32
+            [cos(s[0]), sin(s[0]), cos(s[1]), sin(s[1]), s[2], s[3]], dtype=np.float32,
         )
 
     def _terminal(self):

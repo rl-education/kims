@@ -33,7 +33,7 @@ class FakeEnvironment(gym.Env):
 class FakeArrayObservationEnvironment(FakeEnvironment):
     def __init__(self, *args, **kwargs):
         self.observation_space = spaces.Box(
-            shape=(2,), low=-1, high=1, dtype=np.float32
+            shape=(2,), low=-1, high=1, dtype=np.float32,
         )
         super(FakeArrayObservationEnvironment, self).__init__(*args, **kwargs)
 
@@ -43,7 +43,7 @@ class FakeDictObservationEnvironment(FakeEnvironment):
         self.observation_space = spaces.Dict(
             {
                 "state": spaces.Box(shape=(2,), low=-1, high=1, dtype=np.float32),
-            }
+            },
         )
         super(FakeDictObservationEnvironment, self).__init__(*args, **kwargs)
 
@@ -98,7 +98,7 @@ class TestPixelObservationWrapper(object):
         assert isinstance(observation_space, spaces.Box)
 
         wrapped_env = PixelObservationWrapper(
-            env, pixel_keys=(pixel_key,), pixels_only=pixels_only
+            env, pixel_keys=(pixel_key,), pixels_only=pixels_only,
         )
         wrapped_env.observation_space = wrapped_env.observation_space
         assert isinstance(wrapped_env.observation_space, spaces.Dict)

@@ -36,7 +36,7 @@ class MultiDiscrete(Space):
 
     def sample(self):
         return (self.np_random.random_sample(self.nvec.shape) * self.nvec).astype(
-            self.dtype
+            self.dtype,
         )
 
     def contains(self, x):

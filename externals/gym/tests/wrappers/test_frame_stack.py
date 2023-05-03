@@ -20,7 +20,7 @@ except ImportError:
         pytest.param(
             True,
             marks=pytest.mark.skipif(
-                lz4 is None, reason="Need lz4 to run tests with compression"
+                lz4 is None, reason="Need lz4 to run tests with compression",
             ),
         ),
         False,

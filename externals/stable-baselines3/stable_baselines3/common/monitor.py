@@ -72,7 +72,7 @@ class Monitor(gym.Wrapper):
         if not self.allow_early_resets and not self.needs_reset:
             raise RuntimeError(
                 "Tried to reset an environment before done. If you want to allow early resets, "
-                "wrap your env with Monitor(env, path, allow_early_resets=True)"
+                "wrap your env with Monitor(env, path, allow_early_resets=True)",
             )
         self.rewards = []
         self.needs_reset = False

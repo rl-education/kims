@@ -14,7 +14,7 @@ Card Values:
 - Numerical cards (2-9) have value of their number.
 
 This game is placed with an infinite deck (or with replacement).
-The game starts with dealer having one face up and one face down card, while player having two face up cards. 
+The game starts with dealer having one face up and one face down card, while player having two face up cards.
 
 The player can request additional cards (hit, action=1) until they decide to stop
 (stick, action=0) or exceed 21 (bust).
@@ -24,7 +24,7 @@ If neither player nor dealer busts, the outcome (win, lose, draw) is
 decided by whose sum is closer to 21.
 
 The agent take a 1-element vector for actions.
-The action space is `(action)`, where: 
+The action space is `(action)`, where:
 - `action` is used to decide stick/hit for values (0,1).
 
 The observation of a 3-tuple of: the players current sum,
@@ -41,10 +41,10 @@ Reward schedule:
 - win game: +1
 - lose game: -1
 - draw game: 0
-- win game with natural blackjack: 
+- win game with natural blackjack:
 
-    +1.5 (if <a href="#nat">natural</a> is True.) 
-    
+    +1.5 (if <a href="#nat">natural</a> is True.)
+
     +1 (if <a href="#nat">natural</a> is False.)
 
 ### Arguments
