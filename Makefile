@@ -16,6 +16,7 @@ init:
 	if [ -z `command -v pdm` ];\
 		then make install-pdm;\
 	fi;\
+	git submodule init
 	pip install -U pip
 	pdm install
 	pdm run pre-commit install
