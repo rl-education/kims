@@ -21,7 +21,7 @@ init:
 	pdm run pre-commit install
 
 format:
-	pdm run black .
+	pdm run black src
 
 lint:
 	pdm run pyright src
