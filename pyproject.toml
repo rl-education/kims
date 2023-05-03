@@ -7,7 +7,11 @@ authors = [
     {name = "limjiyoon", email = "luinpark@gmail.com"},
     {name = "yurirocha15", email = "yurirocha15@gmail.com"},
 ]
-dependencies = []
+dependencies = [
+    "gym @ file:///${PROJECT_ROOT}/externals/gym",
+    "stable-baselines3 @ file:///${PROJECT_ROOT}/externals/stable-baselines3",
+    "pre-commit>=3.3.1",
+]
 requires-python = ">=3.10,<3.11"
 readme = "README.md"
 
@@ -16,7 +20,6 @@ readme = "README.md"
 dev = [
     "black>=23.3.0",
     "pytest>=7.3.0",
-    "pre-commit>=3.2.2",
     "pyright>=1.1.304",
     "ruff>=0.0.261",
 ]
@@ -94,4 +97,5 @@ pylint = {"max-args"=12, "max-statements"=60}
 # Python static type checker
 [tool.pyright]
 include = ["kims"]
+exclude = ["externals/**"]
 reportMissingImports = true
