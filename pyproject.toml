@@ -7,8 +7,11 @@ authors = [
     {name = "limjiyoon", email = "luinpark@gmail.com"},
     {name = "yurirocha15", email = "yurirocha15@gmail.com"},
 ]
-dependencies = []
-requires-python = ">=3.10,<3.11"
+dependencies = [
+    "gym @ file:///${PROJECT_ROOT}/externals/gym",
+    "stable-baselines3 @ file:///${PROJECT_ROOT}/externals/stable-baselines3",
+]
+requires-python = ">=3.7,<3.8"
 readme = "README.md"
 
 [tool.pdm]
@@ -16,9 +19,9 @@ readme = "README.md"
 dev = [
     "black>=23.3.0",
     "pytest>=7.3.0",
-    "pre-commit>=3.2.2",
     "pyright>=1.1.304",
     "ruff>=0.0.261",
+    "pre-commit>=2.21.0",
 ]
 [build-system]
 requires = ["pdm-backend"]
@@ -86,8 +89,8 @@ per-file-ignores = {}
 line-length = 110
 show-source = true
 
-# Assume Python 3.10.
-target-version = "py310"
+# Assume Python 3.7.
+target-version = "py37"
 
 pylint = {"max-args"=12, "max-statements"=60}
 
