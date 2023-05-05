@@ -7,7 +7,11 @@ authors = [
     {name = "limjiyoon", email = "luinpark@gmail.com"},
     {name = "yurirocha15", email = "yurirocha15@gmail.com"},
 ]
-dependencies = []
+dependencies = [
+    "gym>=0.26.2",
+    "pygame>=2.1.0",
+    "matplotlib>=3.7.1",
+]
 requires-python = ">=3.10,<3.11"
 readme = "README.md"
 
@@ -93,5 +97,13 @@ pylint = {"max-args"=12, "max-statements"=60}
 
 # Python static type checker
 [tool.pyright]
-include = ["kims"]
+pythonVersion = "3.10"
+pythonPlatform = "Linux"
+include = ["./**/src"]
+exclude = ["**/__pycache__"]
+ignore = []
+useLibraryCodeForTypes = true
 reportMissingImports = true
+reportMissingTypeStubs = false
+reportOptionalSubscript = false
+reportGeneralTypeIssues = false
