@@ -8,9 +8,10 @@ authors = [
     {name = "yurirocha15", email = "yurirocha15@gmail.com"},
 ]
 dependencies = [
-    "gym>=0.26.2",
     "pygame>=2.1.0",
     "matplotlib>=3.7.1",
+    "stable-baselines3 @ git+https://github.com/DLR-RM/stable-baselines3",
+    "gym>=0.26.2",
 ]
 requires-python = ">=3.10,<3.11"
 readme = "README.md"
