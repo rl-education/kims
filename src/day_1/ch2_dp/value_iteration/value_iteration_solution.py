@@ -3,6 +3,7 @@ import time
 
 import gym
 import numpy as np
+
 from day_1.ch2_dp.visualization import visualize_results
 
 
