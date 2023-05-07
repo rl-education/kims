@@ -4,5 +4,5 @@ init:
 	pre-commit install
 
 format:
-	black . --line-length 110
-	isort . --skip-gitignore --profile black
+	black src --line-length 110
+	isort src --skip-gitignore --profile black
