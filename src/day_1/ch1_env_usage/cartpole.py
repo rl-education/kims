@@ -6,7 +6,6 @@ import gym
 
 
 def main() -> None:
-    """Run CartPole environment."""
     env = gym.make("CartPole-v1")
 
     observ_dim = env.observation_space.shape[0]

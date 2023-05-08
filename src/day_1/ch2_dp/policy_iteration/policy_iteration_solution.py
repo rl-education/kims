@@ -13,7 +13,6 @@ def policy_evaluation(
     gamma: float = 0.99,
     epsilon: float = 1e-6,
 ) -> np.ndarray:
-    """Policy evaluation."""
     # Initialize value table
     value_table = np.random.uniform(size=(observ_num, 1))
 
@@ -37,7 +36,6 @@ def policy_evaluation(
 
 
 def policy_improvement(value_table: np.ndarray, dynamics: dict[int, Any], gamma: float = 0.99) -> np.ndarray:
-    """Policy improvement."""
     # Initialize policy prime and Q-function table
     policy_prime = np.zeros((observ_num, action_num))
     q_table = np.zeros((observ_num, action_num))
@@ -54,7 +52,6 @@ def policy_improvement(value_table: np.ndarray, dynamics: dict[int, Any], gamma:
 
 
 def policy_iteration(env: gym.Env, observ_num: int, action_num: int) -> tuple[np.ndarray, np.ndarray]:
-    """Policy iteration."""
     dynamics = env.unwrapped.P
     policy_table = np.random.uniform(size=(observ_num, action_num))
     policy_table = policy_table / np.sum(policy_table, axis=1, keepdims=True)
@@ -77,21 +74,22 @@ def policy_iteration(env: gym.Env, observ_num: int, action_num: int) -> tuple[np
 
 
 def run(env: gym.Env, action_num: int, policy_table: np.ndarray) -> float:
-    """Run episodes."""
-    done = False
-    total_reward = 0.0
-    obs = env.reset()
+    episode_reward = 0
 
-    while not done:
+    obs = env.reset()
+    for _ in range(100):
+        time.sleep(0.5)
         env.render()
 
         action = np.random.choice(action_num, 1, p=policy_table[obs][:])[0]
         next_obs, reward, done, _ = env.step(action)
 
-        total_reward += reward
         obs = next_obs
-        time.sleep(0.3)
-    return total_reward
+        episode_reward += reward
+
+        if done:
+            break
+    return episode_reward
 
 
 if __name__ == "__main__":
@@ -99,7 +97,7 @@ if __name__ == "__main__":
 
     observ_num = env.observation_space.n
     action_num = env.action_space.n
-    print(f"observ_num: {observ_num} | action_num: {action_num}")
+    print(f"observ_num: {observ_num} | action_num: {action_num}\n")
 
     start_time = time.time()
     policy_table, value_table = policy_iteration(env=env, observ_num=observ_num, action_num=action_num)
@@ -107,15 +105,15 @@ if __name__ == "__main__":
 
     visualize_results(policy=policy_table, value=np.reshape(value_table, (8, 8)))
 
-    sum_returns = 0.0
     num_episodes = 3
+    episode_returns = 0.0
     for _ in range(num_episodes):
-        episode_return = run(env=env, action_num=action_num, policy_table=policy_table)
-        sum_returns += episode_return
+        episode_reward = run(env=env, action_num=action_num, policy_table=policy_table)
+        episode_returns += episode_reward
 
     print(
         f"\ntotal_time: {end_time}\n"
         f"num_episodes: {num_episodes}\n"
-        f"sum_returns: {sum_returns}\n"
-        f"mean_returns: {sum_returns / num_episodes}\n",
+        f"episode_returns: {episode_returns}\n"
+        f"mean_returns: {episode_returns / num_episodes}\n",
     )

@@ -51,7 +51,7 @@ class QLearning:
 
         episode_idx = 0
         episode_reward = 0
-        episode_returns = 0.0
+        episode_returns = 0
 
         state = self.env.reset()
         for step_idx in range(1, self.num_steps + 1):
@@ -85,7 +85,7 @@ class QLearning:
                 episode_reward = 0
 
             # If all the returns of episodes are above 1000, stop training
-            if episode_returns >= 1000.0:
+            if episode_returns >= 1000:
                 break
         return self.q_table
 

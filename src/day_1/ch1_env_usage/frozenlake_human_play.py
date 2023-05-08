@@ -19,7 +19,6 @@ class _Getch:
 
 
 def main() -> None:
-    """Run FrozenLake human play environment."""
     inkey = _Getch()
 
     arrow_keys = {

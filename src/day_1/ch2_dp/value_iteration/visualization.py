@@ -1,6 +1,6 @@
 """Visualization.
 
-Reference: https://github.com/sjchoi86/rl_tutorial/blob/main/notebooks/04_policy_iteration.ipynb
+Reference: https://github.com/sjchoi86/rl_tutorial/blob/main/notebooks/03_value_iteration.ipynb
 """
 
 import matplotlib.pyplot as plt

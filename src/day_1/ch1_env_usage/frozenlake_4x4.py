@@ -5,7 +5,6 @@ import gym
 
 
 def main() -> None:
-    """Run FrozenLake 4x4 environment."""
     env = gym.make("FrozenLake-v1", is_slippery=False)
 
     observ_num = env.observation_space.n
