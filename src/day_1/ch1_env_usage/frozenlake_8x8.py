@@ -7,29 +7,34 @@ import gym
 def main() -> None:
     env = gym.make("FrozenLake8x8-v1", is_slippery=False)
 
-    observ_num = env.observation_space.n
+    state_num = env.observation_space.n
     action_num = env.action_space.n
-    print(f"observ_num: {observ_num} | action_num: {action_num}")
+    print(f"state_num: {state_num} | action_num: {action_num}\n")
 
-    done = False
-    obs = env.reset()
+    for episode_idx in range(3):
+        state = env.reset()
 
-    while not done:
-        env.render()
+        while True:
+            time.sleep(1)
+            env.render()
 
-        action = env.action_space.sample()
-        next_obs, reward, done, _ = env.step(action)
+            action = env.action_space.sample()
+            next_state, reward, done, _ = env.step(action)
 
-        print(
-            f"observation: {obs} | "
-            f"action: {action} | "
-            f"reward: {reward} | "
-            f"next_observation: {next_obs} | "
-            f"done: {done}\n",
-        )
+            print(
+                f"state: {state} | "
+                f"action: {action} | "
+                f"reward: {reward} | "
+                f"next_state: {next_state} | "
+                f"done: {done}\n",
+            )
 
-        obs = next_obs
-        time.sleep(1)
+            state = next_state
+
+            if done:
+                env.render()
+                print(f"\nepisode_idx: {episode_idx}\n")
+                break
 
 
 if __name__ == "__main__":

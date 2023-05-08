@@ -166,7 +166,7 @@ class DQN:
         episode_reward = 0
 
         state = self.env.reset()
-        for step_idx in range(10000):
+        for step_idx in range(5000):
             self.env.render()
 
             q_value = self.current_model(torch.FloatTensor(np.float32(state)).to(DEVICE))
@@ -178,7 +178,7 @@ class DQN:
 
             if done:
                 print(
-                    f"\nstep_idx: {step_idx}\n"
+                    f"\nstep_idx: {step_idx + 1}\n"
                     f"episode_idx: {episode_idx}\n"
                     f"episode_reward: {episode_reward}\n",
                 )

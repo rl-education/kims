@@ -10,6 +10,7 @@ class QLearning:
     def __init__(
         self,
         env: gym.Env,
+        state_num: int,
         action_num: int,
         gamma: float = 0.99,
         learning_rate: float = 0.01,
@@ -57,7 +58,7 @@ class QLearning:
         for step_idx in range(1, self.num_steps + 1):
             # Collect experience (s, a, r, s') using the policy
             action = self.select_action(state=state)
-            next_state, reward, done, _ = env.step(action)
+            next_state, reward, done, _ = self.env.step(action)
 
             # Update Q table
             self.update_q_table(
@@ -75,7 +76,6 @@ class QLearning:
                     f"\ntotal_time: {time.time() - start_time}\n"
                     f"step_idx: {step_idx}\n"
                     f"episode_idx: {episode_idx}\n"
-                    f"episode_reward: {episode_reward}\n"
                     f"episode_returns: {episode_returns}\n",
                 )
 
@@ -90,33 +90,32 @@ class QLearning:
         return self.q_table
 
     def test(self) -> None:
-        episode_idx = 0
         episode_reward = 0
 
-        state = self.env.reset()
-        for step_idx in range(42):
-            time.sleep(0.5)
-            self.env.render()
+        for episode_idx in range(3):
+            state = self.env.reset()
 
-            action = np.argmax(q_table[state])
-            next_state, reward, done, _ = self.env.step(action)
+            while True:
+                time.sleep(0.5)
+                self.env.render()
 
-            state = next_state
-            episode_reward += reward
+                action = np.argmax(self.q_table[state])
+                next_state, reward, done, _ = self.env.step(action)
 
-            if done:
-                print(
-                    f"\nstep_idx: {step_idx}\n"
-                    f"episode_idx: {episode_idx}\n"
-                    f"episode_reward: {episode_reward}\n",
-                )
+                state = next_state
+                episode_reward += reward
 
-                state = self.env.reset()
-                episode_idx += 1
-                episode_reward = 0
+                if done:
+                    self.env.render()
+                    print(
+                        f"\nepisode_idx: {episode_idx}\n" f"episode_reward: {episode_reward}\n",
+                    )
+
+                    episode_reward = 0
+                    break
 
 
-if __name__ == "__main__":
+def main() -> None:
     env = gym.make("FrozenLake8x8-v1", is_slippery=False)
 
     state_num = env.observation_space.n
@@ -124,7 +123,7 @@ if __name__ == "__main__":
     print(f"state_num: {state_num} | action_num: {action_num}\n")
 
     # Create Q-learning agent
-    q_learning = QLearning(env=env, action_num=action_num)
+    q_learning = QLearning(env=env, state_num=state_num, action_num=action_num)
 
     # Train Q-learning agent
     q_table = q_learning.train()
@@ -137,3 +136,7 @@ if __name__ == "__main__":
 
     # Close the FrozenLake8x8 environment
     env.close()
+
+
+if __name__ == "__main__":
+    main()
