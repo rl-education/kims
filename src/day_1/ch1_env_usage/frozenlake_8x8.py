@@ -25,7 +25,7 @@ def main() -> None:
             f"action: {action} | "
             f"reward: {reward} | "
             f"next_observation: {next_obs} | "
-            f"done: {done} | ",
+            f"done: {done}\n",
         )
 
         obs = next_obs
