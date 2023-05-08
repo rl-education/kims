@@ -22,10 +22,3 @@ repos:
         name: format
         language: system
         entry: make format
-
-  - repo: local
-    hooks:
-      - id: lint
-        name: lint
-        language: system
-        entry: make lint
