@@ -3,114 +3,137 @@ import time
 
 import gym
 import numpy as np
+from visualization import visualize_results
 
 
-def select_action(obs: int, action_num: int, q_table: np.ndarray, epsilon: float = 0.8) -> np.ndarray:
-    """Select action."""
-    if np.random.rand() <= epsilon:
-        # Choose a random action with probability epsilon
-        return np.random.randint(action_num)
-    else:
+class QLearning:
+    def __init__(
+        self,
+        env: gym.Env,
+        action_num: int,
+        gamma: float = 0.99,
+        learning_rate: float = 0.01,
+        num_steps: int = 10000000,
+        epsilon: float = 0.8,
+    ) -> None:
+        self.env = env
+        self.action_num = action_num
+        self.gamma = gamma
+        self.num_steps = num_steps
+        self.learning_rate = learning_rate
+        self.epsilon = epsilon
+
+        # Initialize Q-function table
+        self.q_table = np.zeros((state_num, action_num))
+
+    def select_action(self, state: int) -> np.ndarray:
         # Choose the action with highest Q-value at the current state
-        return np.argmax(q_table[obs])
-
-
-def update_q_table(
-    obs: int,
-    action: int,
-    reward: float,
-    next_obs: int,
-    q_table: np.ndarray,
-    gamma: float = 0.99,
-    learning_rate: float = 0.01,
-) -> None:
-    """Update Q-function table."""
-    q = q_table[obs][action]
-    q_backup = reward + gamma * max(q_table[next_obs])
-    q_table[obs][action] += learning_rate * (q_backup - q)
-    return q_table
-
-
-def run(
-    env: gym.Env,
-    action_num: int,
-    q_table: np.ndarray,
-    test_mode: bool = False,
-) -> tuple[float, np.ndarray]:
-    """Run episodes."""
-    done = False
-    total_reward = 0.0
-    obs, _ = env.reset()
-
-    while not done:
-        if test_mode:
-            action = np.argmax(q_table[obs])
-            next_obs, reward, done, _, _ = env.step(action)
+        if np.random.rand() > self.epsilon:
+            action = np.argmax(self.q_table[state])
+        # Choose a random action with probability epsilon
         else:
-            action = select_action(obs=obs, action_num=action_num, q_table=q_table)
-            next_obs, reward, done, _, _ = env.step(action)
-            q_table = update_q_table(
-                obs=obs,
+            action = np.random.randint(self.action_num)
+        return action
+
+    def update_q_table(
+        self,
+        state: int,
+        action: int,
+        reward: float,
+        next_state: int,
+    ) -> None:
+        q_value = self.q_table[state][action]
+        expected_q_value = reward + self.gamma * max(self.q_table[next_state])
+        self.q_table[state][action] += self.learning_rate * (expected_q_value - q_value)
+
+    def train(self) -> np.ndarray:
+        start_time = time.time()
+
+        episode_idx = 0
+        episode_reward = 0
+        episode_returns = 0.0
+
+        state = self.env.reset()
+        for step_idx in range(1, self.num_steps + 1):
+            # Collect experience (s, a, r, s') using the policy
+            action = self.select_action(state=state)
+            next_state, reward, done, _ = env.step(action)
+
+            # Update Q table
+            self.update_q_table(
+                state=state,
                 action=action,
                 reward=reward,
-                next_obs=next_obs,
-                q_table=q_table,
+                next_state=next_state,
             )
 
-        total_reward += reward
-        obs = next_obs
-    return total_reward, q_table
+            state = next_state
+            episode_reward += reward
 
+            if done:
+                print(
+                    f"\ntotal_time: {time.time() - start_time}\n"
+                    f"step_idx: {step_idx}\n"
+                    f"episode_idx: {episode_idx}\n"
+                    f"episode_reward: {episode_reward}\n"
+                    f"episode_returns: {episode_returns}\n",
+                )
 
-def train(env: gym.Env, action_num: int, q_table: np.ndarray) -> np.ndarray:
-    """Train Q-learning agent."""
-    start_time = time.time()
+                state = self.env.reset()
+                episode_returns += episode_reward
+                episode_idx += 1
+                episode_reward = 0
 
-    sum_returns = 0.0
-    num_episodes = 0
-    for _ in range(100000):
-        episode_return, q_table = run(env=env, action_num=action_num, q_table=q_table)
-        sum_returns += episode_return
-        num_episodes += 1
+            # If all the returns of episodes are above 1000, stop training
+            if episode_returns >= 1000.0:
+                break
+        return self.q_table
 
-        print(
-            f"\ntotal_time: {time.time() - start_time}\n"
-            f"num_episodes: {num_episodes}\n"
-            f"sum_returns: {sum_returns}\n"
-            f"mean_returns: {sum_returns / num_episodes}\n",
-        )
-    return q_table
+    def test(self) -> None:
+        episode_idx = 0
+        episode_reward = 0
 
+        state = self.env.reset()
+        for step_idx in range(42):
+            time.sleep(0.5)
+            self.env.render()
 
-def test(env: gym.Env, action_num: int, q_table: np.ndarray) -> None:
-    """Test Q-learning agent."""
-    sum_returns = 0.0
-    num_episodes = 0
-    for _ in range(3):
-        episode_return, _ = run(env=env, action_num=action_num, q_table=q_table, test_mode=True)
-        sum_returns += episode_return
-        num_episodes += 1
+            action = np.argmax(q_table[state])
+            next_state, reward, done, _ = self.env.step(action)
 
-        print(
-            f"num_episodes: {num_episodes}\n"
-            f"sum_returns: {sum_returns}\n"
-            f"mean_returns: {sum_returns / num_episodes}\n",
-        )
+            state = next_state
+            episode_reward += reward
+
+            if done:
+                print(
+                    f"\nstep_idx: {step_idx}\n"
+                    f"episode_idx: {episode_idx}\n"
+                    f"episode_reward: {episode_reward}\n",
+                )
+
+                state = self.env.reset()
+                episode_idx += 1
+                episode_reward = 0
 
 
 if __name__ == "__main__":
     env = gym.make("FrozenLake8x8-v1", is_slippery=False)
 
-    observ_num = env.observation_space.n
+    state_num = env.observation_space.n
     action_num = env.action_space.n
-    print(f"observ_num: {observ_num} | action_num: {action_num}")
+    print(f"state_num: {state_num} | action_num: {action_num}\n")
 
-    # Initialize Q-function table
-    q_table = np.zeros((observ_num, action_num))
+    # Create Q-learning agent
+    q_learning = QLearning(env=env, action_num=action_num)
 
     # Train Q-learning agent
-    q_table = train(env=env, action_num=action_num, q_table=q_table)
+    q_table = q_learning.train()
+
+    # Visualize Q table
+    visualize_results(q_table=q_table)
 
     # Test Q-learning agent
-    env = gym.make("FrozenLake8x8-v1", is_slippery=False, render_mode="human")
-    test(env=env, action_num=action_num, q_table=q_table)
+    q_learning.test()
+
+    # Close the FrozenLake8x8 environment
+    env.close()

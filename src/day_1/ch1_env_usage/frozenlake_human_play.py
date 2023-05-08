@@ -29,10 +29,11 @@ def main() -> None:
         "\x1b[D": 0,
     }
 
-    env = gym.make("FrozenLake8x8-v1", render_mode="human")
+    env = gym.make("FrozenLake8x8-v1", is_slippery=False)
 
     done = False
-    obs, _ = env.reset()
+    obs = env.reset()
+    env.render()
 
     while not done:
         # Choose an action from keyboard
@@ -42,7 +43,7 @@ def main() -> None:
             break
 
         action = arrow_keys[key]
-        next_obs, reward, done, truncated, _ = env.step(action)
+        next_obs, reward, done, _ = env.step(action)
 
         # Show the board after action
         env.render()
@@ -52,8 +53,7 @@ def main() -> None:
             f"action: {action} | "
             f"reward: {reward} | "
             f"next_observation: {next_obs} | "
-            f"done: {done} | "
-            f"truncated: {truncated}\n",
+            f"done: {done} | ",
         )
 
         obs = next_obs

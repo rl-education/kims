@@ -80,13 +80,13 @@ def run(env: gym.Env, action_num: int, policy_table: np.ndarray) -> float:
     """Run episodes."""
     done = False
     total_reward = 0.0
-    obs, _ = env.reset()
+    obs = env.reset()
 
     while not done:
         env.render()
 
         action = np.random.choice(action_num, 1, p=policy_table[obs][:])[0]
-        next_obs, reward, done, _, _ = env.step(action)
+        next_obs, reward, done, _ = env.step(action)
 
         total_reward += reward
         obs = next_obs
@@ -95,7 +95,7 @@ def run(env: gym.Env, action_num: int, policy_table: np.ndarray) -> float:
 
 
 if __name__ == "__main__":
-    env = gym.make("FrozenLake8x8-v1", is_slippery=False, render_mode="human")
+    env = gym.make("FrozenLake8x8-v1", is_slippery=False)
 
     observ_num = env.observation_space.n
     action_num = env.action_space.n
@@ -105,7 +105,7 @@ if __name__ == "__main__":
     policy_table, value_table = policy_iteration(env=env, observ_num=observ_num, action_num=action_num)
     end_time = time.time() - start_time
 
-    visualize_results(policy=policy_table, value=np.reshape(value_table, (8, 8)), title="Policy Iteration")
+    visualize_results(policy=policy_table, value=np.reshape(value_table, (8, 8)))
 
     sum_returns = 0.0
     num_episodes = 3

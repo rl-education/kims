@@ -11,7 +11,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 def visualize_results(
     policy: np.ndarray,
     value: np.ndarray,
-    title: str,
+    title: str = "Value Iteration",
     fontsize: int = 15,
     title_fs: int = 15,
 ) -> None:
