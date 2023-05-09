@@ -1,4 +1,10 @@
-"""DQN algorithm."""
+"""
+DQN algorithm.
+
+Reference:
+    - https://github.com/higgsfield/RL-Adventure/blob/master/1.dqn.ipynb
+    - https://github.com/higgsfield/RL-Adventure/blob/master/2.double%20dqn.ipynb
+"""
 import time
 from collections import deque
 

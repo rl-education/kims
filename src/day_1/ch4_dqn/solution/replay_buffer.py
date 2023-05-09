@@ -1,4 +1,10 @@
-"""Replay Buffer."""
+"""
+Replay Buffer.
+
+Reference:
+    - https://github.com/higgsfield/RL-Adventure/blob/master/1.dqn.ipynb
+    - https://github.com/higgsfield/RL-Adventure/blob/master/2.double%20dqn.ipynb
+"""
 import random
 from collections import deque
 
