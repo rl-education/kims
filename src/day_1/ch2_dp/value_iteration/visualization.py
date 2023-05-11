@@ -1,6 +1,6 @@
 """Visualization.
 
-Reference: https://github.com/sjchoi86/rl_tutorial/blob/main/notebooks/04_policy_iteration.ipynb
+Reference: https://github.com/sjchoi86/rl_tutorial/blob/main/notebooks/03_value_iteration.ipynb
 """
 
 import matplotlib.pyplot as plt
@@ -11,7 +11,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 def visualize_results(
     policy: np.ndarray,
     value: np.ndarray,
-    title: str,
+    title: str = "Value Iteration",
     fontsize: int = 15,
     title_fs: int = 15,
 ) -> None:

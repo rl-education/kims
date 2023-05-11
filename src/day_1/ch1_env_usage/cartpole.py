@@ -6,34 +6,33 @@ import gym
 
 
 def main() -> None:
-    """Run CartPole environment."""
-    env = gym.make("CartPole-v1", render_mode="human")
+    env = gym.make("CartPole-v1")
 
-    observ_dim = env.observation_space.shape[0]
+    state_dim = env.observation_space.shape[0]
     action_num = env.action_space.n
-    print(f"observ_dim: {observ_dim} | action_num: {action_num}")
+    print(f"state_dim: {state_dim} | action_num: {action_num}\n")
 
-    for _ in range(10000):
-        done = False
-        obs, _ = env.reset()
+    state = env.reset()
+    for step_idx in range(10000):
+        time.sleep(0.3)
+        env.render()
 
-        while not done:
-            env.render()
+        action = env.action_space.sample()
+        next_state, reward, done, _ = env.step(action)
 
-            action = env.action_space.sample()
-            next_obs, reward, done, truncated, _ = env.step(action)
+        print(
+            f"state: {state} | "
+            f"action: {action} | "
+            f"reward: {reward} | "
+            f"next_state: {next_state} | "
+            f"done: {done}\n",
+        )
 
-            print(
-                f"observation: {obs} | "
-                f"action: {action} | "
-                f"reward: {reward} | "
-                f"next_observation: {next_obs} | "
-                f"done: {done} | "
-                f"truncated: {truncated}\n",
-            )
+        state = next_state
 
-            obs = next_obs
-            time.sleep(0.3)
+        if done:
+            print(f"step_idx: {step_idx + 1}\n")
+            state = env.reset()
 
 
 if __name__ == "__main__":

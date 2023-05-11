@@ -5,6 +5,13 @@ import tty
 
 import gym
 
+ARROW_KEYS = {
+    "\x1b[A": 3,
+    "\x1b[B": 1,
+    "\x1b[C": 2,
+    "\x1b[D": 0,
+}
+
 
 class _Getch:
     def __call__(self) -> str:
@@ -13,50 +20,44 @@ class _Getch:
         try:
             tty.setraw(sys.stdin.fileno())
             ch = sys.stdin.read(3)
+            if ch not in ARROW_KEYS:
+                raise InterruptedError
         finally:
             termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
         return ch
 
 
 def main() -> None:
-    """Run FrozenLake human play environment."""
     inkey = _Getch()
 
-    arrow_keys = {
-        "\x1b[A": 3,
-        "\x1b[B": 1,
-        "\x1b[C": 2,
-        "\x1b[D": 0,
-    }
+    env = gym.make("FrozenLake8x8-v1", is_slippery=False)
 
-    env = gym.make("FrozenLake8x8-v1", render_mode="human")
+    for episode_idx in range(3):
+        state = env.reset()
 
-    done = False
-    obs, _ = env.reset()
+        while True:
+            env.render()
 
-    while not done:
-        # Choose an action from keyboard
-        key = inkey()
-        if key not in arrow_keys.keys():
-            print("Game aborted!")
-            break
+            # Choose an action from keyboard
+            action = ARROW_KEYS[inkey()]
+            next_state, reward, done, _ = env.step(action)
 
-        action = arrow_keys[key]
-        next_obs, reward, done, truncated, _ = env.step(action)
+            # Show the board after action
+            env.render()
 
-        # Show the board after action
-        env.render()
+            print(
+                f"state: {state} | "
+                f"action: {action} | "
+                f"reward: {reward} | "
+                f"next_state: {next_state} | "
+                f"done: {done}\n",
+            )
 
-        print(
-            f"observation: {obs} | "
-            f"action: {action} | "
-            f"reward: {reward} | "
-            f"next_observation: {next_obs} | "
-            f"done: {done} | "
-            f"truncated: {truncated}\n",
-        )
+            state = next_state
 
-        obs = next_obs
+            if done:
+                print(f"\nepisode_idx: {episode_idx}\n")
+                break
 
 
 if __name__ == "__main__":
