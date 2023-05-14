@@ -89,9 +89,10 @@ class DQN:
         if np.random.rand() > self.epsilon:
             ###
             # Problem 3:
-            #
-            q_value = self.current_model(torch.FloatTensor(state).to(DEVICE))
-            action = q_value.argmax().item()
+            # Please write the code that obtains the action using Q-value,
+            # which is the output of the current Q-network
+            q_value = None
+            action = None
             ###
         # Choose a random action with probability epsilon
         else:
@@ -99,9 +100,6 @@ class DQN:
         return action
 
     def update_target(self) -> None:
-        #################
-        ### Problem 4 ###
-        #################
         self.target_model.load_state_dict(self.current_model.state_dict())
 
     def compute_td_loss(self) -> float:
@@ -117,23 +115,23 @@ class DQN:
         q_values = self.current_model(state)
         q_value = q_values.gather(1, action).squeeze(1)
 
-        #################
-        ### Problem 5 ###
-        #################
-        # Get target for Q regression
+        ###
+        # Problem 4:
+        # Please write the code to get the target Q-value for Q regression from DQN or Double DQN
         target_q_values = self.target_model(next_state)
-        if not self.use_ddqn:
-            target_q_value = target_q_values.max(1)[0]
-        else:
-            next_q_values = self.current_model(next_state).max(1)[1].unsqueeze(1)
-            target_q_value = target_q_values.gather(1, next_q_values).max(1)[0]
+        if not self.use_ddqn:  # DQN
+            target_q_value = None
+        else:  # Double DQN
+            next_q_values = None
+            target_q_value = None
+        ###
 
-        #################
-        ### Problem 6 ###
-        #################
-        # Update parameters of current model
-        expected_q_value = reward + self.gamma * target_q_value * (1 - done)
-        loss = F.mse_loss(input=q_value, target=expected_q_value.detach())
+        ###
+        # Problem 5:
+        # Please write the code that obtains the loss function using TD backup and updates parameters of the current model
+        expected_q_value = None
+        loss = None
+        ###
 
         self.optimizer.zero_grad()
         loss.backward()

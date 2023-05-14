@@ -103,7 +103,7 @@ class DQN:
         q_values = self.current_model(state)
         q_value = q_values.gather(1, action).squeeze(1)
 
-        # Get target for Q regression
+        # Get the target Q-value for Q regression
         target_q_values = self.target_model(next_state)
         if not self.use_ddqn:
             target_q_value = target_q_values.max(1)[0]
@@ -111,7 +111,7 @@ class DQN:
             next_q_values = self.current_model(next_state).max(1)[1].unsqueeze(1)
             target_q_value = target_q_values.gather(1, next_q_values).max(1)[0]
 
-        # Update parameters of current model
+        # Update parameters of the current model
         expected_q_value = reward + self.gamma * target_q_value * (1 - done)
         loss = F.mse_loss(input=q_value, target=expected_q_value.detach())
 

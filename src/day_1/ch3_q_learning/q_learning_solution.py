@@ -43,6 +43,7 @@ class QLearning:
         reward: float,
         next_state: int,
     ) -> None:
+        # Update the Q-function table using the TD backup
         q_value = self.q_table[state][action]
         self.q_table[state][action] += self.learning_rate * (
             reward + self.gamma * max(self.q_table[next_state]) - q_value
