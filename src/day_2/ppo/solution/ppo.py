@@ -21,19 +21,19 @@ DEVICE = torch.device("cuda" if USE_CUDA else "cpu")
 class ActorNetwork(nn.Module):
     """Actor Network which decide action."""
 
-    def __init__(self, state_dim: int, action_num: int, hidden_size: int = 256):
+    def __init__(self, state_dim: int, num_actions: int, hidden_size: int = 256):
         super().__init__()
 
         self.layers = nn.Sequential(
             nn.Linear(state_dim, hidden_size),
             nn.ReLU(),
-            nn.Linear(hidden_size, action_num),
+            nn.Linear(hidden_size, num_actions),
         )
 
-        self.log_std = nn.Parameter(torch.ones(1, action_num) * 0.0)
+        self.log_std = nn.Parameter(torch.ones(1, num_actions) * 0.0)
 
     def forward(self, x: torch.Tensor) -> torch.distributions.Normal:
-        """Forward and compute action distributions."""
+        """Compute action distributions."""
         mu = self.layers(x)
         std = self.log_std.exp().expand_as(mu)
         action_distribution = torch.distributions.Normal(mu, std)
@@ -41,7 +41,7 @@ class ActorNetwork(nn.Module):
 
 
 class CriticNetwork(nn.Module):
-    """Critic Network which predice action value."""
+    """Critic Network which predict action value."""
 
     def __init__(self, state_dim: int, hidden_size: int = 256):
         super().__init__()
@@ -77,18 +77,18 @@ class PPO:
         # Create environments
         self.env_name = env_name
         self.env = gym.vector.make(self.env_name, num_envs=num_envs)
-        self.state_dim = self.env.observation_space.shape[1]  # type: ignore
-        self.action_num = self.env.action_space.shape[1]  # type: ignore
+        state_dim = self.env.observation_space.shape[1]  # type: ignore
+        num_actions = self.env.action_space.shape[1]  # type: ignore
 
         # Create actor-critic network
         self.actor = ActorNetwork(
-            state_dim=self.state_dim,
-            action_num=self.action_num,
+            state_dim=state_dim,
+            num_actions=num_actions,
             hidden_size=hidden_size,
         ).to(DEVICE)
 
         self.critic = CriticNetwork(
-            state_dim=self.state_dim,
+            state_dim=state_dim,
             hidden_size=hidden_size,
         ).to(DEVICE)
 
