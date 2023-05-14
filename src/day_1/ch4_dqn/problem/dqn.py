@@ -25,11 +25,15 @@ class QNetwork(nn.Module):
         super(QNetwork, self).__init__()
 
         self.layers = nn.Sequential(
-            nn.Linear(state_dim, 128),
-            nn.ReLU(),
-            nn.Linear(128, 128),
-            nn.ReLU(),
-            nn.Linear(128, action_num),
+            ###
+            # Problem 1:
+            # Please write the code that constitutes the layer of the Q-network
+            # - Linear transformation (state_dim, 128)
+            # - ReLu activation function
+            # - Linear transformation (128, 128)
+            # - ReLu activation function
+            # - Linear transformation (128, action_num)
+            ###
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -74,20 +78,30 @@ class DQN:
 
     def select_action(self, state: np.ndarray) -> np.ndarray:
         """Select an action from the set of available actions."""
-        # Use epsilon greedy exploration
-        self.epsilon *= self.epsilon_decay
-        self.epsilon = max(self.epsilon, 0.01)
+        ###
+        # Problem 2:
+        # Please write the code that computes the epsilon value using epsilon greedy exploration
+        self.epsilon *= None
+        self.epsilon = None
+        ###
 
         # Choose the action with highest Q-value at the current state
         if np.random.rand() > self.epsilon:
+            ###
+            # Problem 3:
+            #
             q_value = self.current_model(torch.FloatTensor(state).to(DEVICE))
             action = q_value.argmax().item()
+            ###
         # Choose a random action with probability epsilon
         else:
             action = np.random.randint(self.action_num)
         return action
 
     def update_target(self) -> None:
+        #################
+        ### Problem 4 ###
+        #################
         self.target_model.load_state_dict(self.current_model.state_dict())
 
     def compute_td_loss(self) -> float:
@@ -103,6 +117,9 @@ class DQN:
         q_values = self.current_model(state)
         q_value = q_values.gather(1, action).squeeze(1)
 
+        #################
+        ### Problem 5 ###
+        #################
         # Get target for Q regression
         target_q_values = self.target_model(next_state)
         if not self.use_ddqn:
@@ -111,6 +128,9 @@ class DQN:
             next_q_values = self.current_model(next_state).max(1)[1].unsqueeze(1)
             target_q_value = target_q_values.gather(1, next_q_values).max(1)[0]
 
+        #################
+        ### Problem 6 ###
+        #################
         # Update parameters of current model
         expected_q_value = reward + self.gamma * target_q_value * (1 - done)
         loss = F.mse_loss(input=q_value, target=expected_q_value.detach())
