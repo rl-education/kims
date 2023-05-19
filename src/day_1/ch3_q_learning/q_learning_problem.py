@@ -30,10 +30,11 @@ class QLearning:
     def select_action(self, state: int) -> np.ndarray:
         ###
         # Problem 1:
-        # Please write the code that choose the action with highest Q-value at the current state
-        if np.random.rand() > self.epsilon:
+        # Please write the code that choose the action with highest Q-value
+        # at the current state with probability 1 - epsilon
+        # and a random action with probability epsilon
+        if None:
             action = None
-        # Please write the code that choose a random action with probability epsilon
         else:
             action = None
         ###
