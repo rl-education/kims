@@ -1,0 +1,2 @@
+dataclasses_json ~= 0.5.7
+tqdm ~= 4.65.0

@@ -1,0 +1,30 @@
+name: "cartpole"
+add_ground_plane: True
+task:
+  num_envs: 10
+  env_spacing: 4.0
+  reset_dist: 3.0
+  max_effort: 400.0
+  max_episode_length: 500
+
+  clip_observations: 10.0
+  clip_actions: 1.0
+  control_frequency_inv: 2 # 60 Hz
+
+physics:
+  # -1 to use default values
+  override_usd_defaults: False
+  enable_self_collisions: False
+  enable_gyroscopic_forces: True
+  # also in stage params
+  # per-actor
+  solver_position_iteration_count: 4
+  solver_velocity_iteration_count: 0
+  sleep_threshold: 0.005
+  stabilization_threshold: 0.001
+  # per-body
+  density: -1
+  max_depenetration_velocity: 100.0
+  # per-shape
+  contact_offset: 0.02
+  rest_offset: 0.001
