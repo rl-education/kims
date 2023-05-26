@@ -53,7 +53,7 @@ def policy_improvement(
             for trans_prob, next_obs, reward, _ in dynamics[s][a]:
                 q_table[s][a] += trans_prob * (reward + gamma * value_table[next_obs])
 
-    # Update policy table from the action with highest Q-value as 1 at the current state
+    # Set to 1 the entry in the policy table that represents taking the action with the highest Q-value at the current state
     policy_prime[np.arange(state_num), np.argmax(q_table, axis=1)] = 1
     return policy_prime
 

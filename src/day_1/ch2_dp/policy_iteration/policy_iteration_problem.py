@@ -62,7 +62,7 @@ def policy_improvement(
 
     ###
     # Problem 3:
-    # Please write the code to update the policy table from the action with the highest Q-value as 1 at the current state
+    # Please write the code to set to 1 the entry in the policy table that represents taking the action with the highest Q-value at the current state
     policy_prime[np.arange(state_num), None] = 1
     ###
     return policy_prime
