@@ -28,12 +28,16 @@ class QLearning:
         self.q_table = np.zeros((state_num, action_num))
 
     def select_action(self, state: int) -> np.ndarray:
-        # Choose the action with highest Q-value at the current state
-        if np.random.rand() > self.epsilon:
-            action = np.argmax(self.q_table[state])
-        # Choose a random action with probability epsilon
+        ###
+        # Problem 1:
+        # Please write the code that choose the action with highest Q-value
+        # at the current state with probability 1 - epsilon
+        # and a random action with probability epsilon
+        if None:
+            action = None
         else:
-            action = np.random.randint(self.action_num)
+            action = None
+        ###
         return action
 
     def update_q_table(
@@ -43,11 +47,12 @@ class QLearning:
         reward: float,
         next_state: int,
     ) -> None:
-        # Update the Q-function table using the TD backup
         q_value = self.q_table[state][action]
-        self.q_table[state][action] += self.learning_rate * (
-            reward + self.gamma * max(self.q_table[next_state]) - q_value
-        )
+        ###
+        # Problem 2:
+        # Please write the code to update the Q-function table using the TD backup
+        self.q_table[state][action] += None
+        ###
 
     def train(self) -> np.ndarray:
         start_time = time.time()

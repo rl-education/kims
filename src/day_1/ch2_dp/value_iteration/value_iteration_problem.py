@@ -23,13 +23,16 @@ def value_iteration(
     iterations = 0
     while True:
         q_table = np.zeros((state_num, action_num))
-        for s in dynamics:
-            for a in dynamics[s]:
-                for trans_prob, next_state, reward, _ in dynamics[s][a]:
-                    q_table[s][a] += trans_prob * (reward + gamma * value_table[next_state])
+        ###
+        # Problem 1:
+        # Please write the code to update the Q-function table by solving the Bellman optimality equation
+        ###
 
-        # Update value prime from the highest Q-value at the Q-function table
-        value_prime = np.max(q_table, axis=1)
+        ###
+        # Problem 2:
+        # Please write the code to update value prime V' from the highest Q-value at the Q-function table
+        value_prime = None
+        ###
 
         distance = np.max(np.abs(value_table - value_prime))
         value_table = value_prime
