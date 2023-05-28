@@ -5,12 +5,8 @@ import numpy as np
 import torch
 from gym import Space, spaces
 from omni.isaac.core.tasks import BaseTask
+from omni.isaac.core.utils.viewports import set_camera_view
 from omni.isaac.gym.vec_env import VecEnvBase
-from omni.kit.viewport.utility import get_viewport_from_window_name
-
-# import omni.kit
-from omni.kit.viewport.utility.camera_state import ViewportCameraState
-from pxr import Gf
 from rl_simulation_class.utils.config import Config
 
 
@@ -52,6 +48,8 @@ class SimpleRLTask(BaseTask, ABC):
             self._num_actions = 1
         if not hasattr(self, "_num_observations"):
             self._num_observations = 1
+        if not hasattr(self, "_num_states"):
+            self.num_states = 0
         if not hasattr(self, "action_space"):
             self._action_space = spaces.Box(
                 np.ones(self._num_actions) * -1.0,
@@ -72,7 +70,6 @@ class SimpleRLTask(BaseTask, ABC):
             device=self._device,
             dtype=torch.float,
         )
-        self._rewards_buffer = torch.zeros(1, device=self._device, dtype=torch.float)
         self._done_buffer = torch.ones(1, device=self._device, dtype=torch.long)
         self._episodes_count = torch.zeros(1, device=self._device, dtype=torch.long)
 
@@ -82,38 +79,23 @@ class SimpleRLTask(BaseTask, ABC):
 
         Args:
             scene (Scene): Scene to add objects to.
-            replicate_physics (bool): Clone physics using PhysX API for better performance
         """
         super().set_up_scene(scene)
 
-        collision_filter_global_paths = list()
-        if self._config.task_config.add_ground_plane:
-            self._ground_plane_path = "/World/defaultGroundPlane"
-            collision_filter_global_paths.append(self._ground_plane_path)
-            scene.add_default_ground_plane(prim_path=self._ground_plane_path)
+        self._ground_plane_path = "/World/defaultGroundPlane"
+        scene.add_default_ground_plane(prim_path=self._ground_plane_path)
 
         self.set_initial_camera_params(camera_position=[10, 10, 3], camera_target=[0, 0, 0])
 
     def set_initial_camera_params(self, camera_position=[10, 10, 3], camera_target=[0, 0, 0]):
-        if self._env._render:
-            viewport_api_2 = get_viewport_from_window_name("Viewport")
-            viewport_api_2.set_active_camera("/OmniverseKit_Persp")
-            camera_state = ViewportCameraState("/OmniverseKit_Persp", viewport_api_2)
-            camera_state.set_position_world(
-                Gf.Vec3d(camera_position[0], camera_position[1], camera_position[2]),
-                True,
-            )
-            camera_state.set_target_world(
-                Gf.Vec3d(camera_target[0], camera_target[1], camera_target[2]),
-                True,
-            )
+        set_camera_view(eye=camera_position, target=camera_target, camera_prim_path="/OmniverseKit_Persp")
 
     @property
-    def default_base_env_path(self):
+    def default_base_path(self):
         """Retrieves default path to the parent of all env prims.
 
         Returns:
-            default_base_env_path(str): Defaults to "/World/envs".
+            default_base_path(str): Defaults to "/World/envs".
         """
         return "/World/envs"
 
@@ -162,11 +144,12 @@ class SimpleRLTask(BaseTask, ABC):
         """
         return self._observation_space
 
-    def reset(self):
-        """Flags all environments for reset."""
-        self._done_buffer = torch.ones_like(self._done_buffer)
-
     ### Methods called by the VecEnvBase
+    @abstractmethod
+    def reset(self):
+        """Reset all environments and return initial observations."""
+        raise NotImplementedError
+
     @abstractmethod
     def pre_physics_step(self, actions):
         """Optionally implemented by individual task classes to process actions.
@@ -176,29 +159,23 @@ class SimpleRLTask(BaseTask, ABC):
         """
         raise NotImplementedError
 
-    def get_observations(self) -> torch.Tensor:
+    @abstractmethod
+    def get_observations(self):
         """
         Return the observations
-
-        Returns:
-            (torch.Tensor): Tensor of observation data.
         """
-        return self._observations_buffer
+        raise NotImplementedError
 
-    def calculate_metrics(self) -> torch.Tensor:
+    @abstractmethod
+    def calculate_metrics(self):
         """
         Return the rewards
-
-        Returns:
-            (torch.Tensor): Tensor of reward data.
         """
-        return self._rewards_buffer
+        raise NotImplementedError
 
-    def is_done(self) -> torch.Tensor:
+    @abstractmethod
+    def is_done(self):
         """
         Return the done signal
-
-        Returns:
-            (torch.Tensor): Tensor of done data.
         """
-        return self._done_buffer
+        raise NotImplementedError

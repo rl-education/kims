@@ -1,2 +1,5 @@
 dataclasses_json ~= 0.5.7
+rl-games ~= 1.6.0
+stable-baselines3 ~= 1.8.0
 tqdm ~= 4.65.0
+wheel == 0.38.4

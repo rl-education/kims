@@ -1,17 +1,19 @@
 import math
-from typing import Any, Tuple
+import os
 
 import numpy as np
 import torch
 from gym import spaces
 from omni.isaac.core.articulations import ArticulationView
+from omni.isaac.core.utils.nucleus import get_assets_root_path
+from omni.isaac.core.utils.prims import create_prim
+from omni.isaac.core.utils.stage import add_reference_to_stage
 from omni.isaac.gym.vec_env import VecEnvBase
-from rl_simulation_class.robot.cartpole import Cartpole
-from rl_simulation_class.tasks.simple_rl_task import SimpleRLTask
+from rl_simulation_class.part_2.multi_env_rl_task import MultiEnvRLTask
 from rl_simulation_class.utils.config import CartpoleConfig, Config
 
 
-class CartpoleTask(SimpleRLTask):
+class CartpoleTask(MultiEnvRLTask):
     def __init__(self, name: str, config: Config, env: VecEnvBase, offset=None) -> None:
         self._config = config
         assert isinstance(self._config.task_config, CartpoleConfig)
@@ -35,23 +37,36 @@ class CartpoleTask(SimpleRLTask):
         self._cart_dof_idx = 0
         self._pole_dof_idx = 0
 
+        self._do_reset = True
+
         super().__init__(name, env, self._config, offset)
 
     def set_up_scene(self, scene) -> None:
         assert isinstance(self._config.task_config, CartpoleConfig)
-        cartpole = Cartpole(
-            prim_path=f"{self.default_base_env_path}/env_0/Cartpole",
-            name="Cartpole",
-            translation=self._cartpole_position,
-        )
-        # cartpole.apply_settings(self._config.task_config.physics)
         super().set_up_scene(scene)
+        # retrieve file path for the Cartpole USD file
+        if self._config.task_config.cartpole_file:
+            usd_path = os.path.join(self._config.config_path, self._config.task_config.cartpole_file)
+        else:
+            assets_root_path = get_assets_root_path()
+            usd_path = assets_root_path + "/Isaac/Robots/Cartpole/cartpole.usd"
+        # add the Cartpole USD to our stage
+        create_prim(
+            prim_path=f"{self.default_base_path}/env_0/Cartpole",
+            prim_type="Xform",
+            position=self._cartpole_position,
+        )
+        add_reference_to_stage(usd_path, f"{self.default_base_path}/env_0/Cartpole")
+        self.clone_environments()
         self._cartpoles = ArticulationView(
-            prim_paths_expr=f"{self.default_base_env_path}/.*/Cartpole",
+            prim_paths_expr=f"{self.default_base_path}/.*/Cartpole",
             name="cartpole_view",
             reset_xform_properties=False,
         )
         scene.add(self._cartpoles)
+
+    def reset(self) -> None:
+        self._done_buffer = torch.ones_like(self._done_buffer)
 
     def get_observations(self) -> dict:
         dof_pos = self._cartpoles.get_joint_positions(clone=False)
@@ -67,10 +82,7 @@ class CartpoleTask(SimpleRLTask):
         self._observations_buffer[:, 2] = pole_pos
         self._observations_buffer[:, 3] = pole_vel
 
-        self._observations_buffer = (
-            torch.clamp(self._observations_buffer, -self.clip_obs, self.clip_obs).to(self._device).clone()
-        )
-        return self._observations_buffer
+        return {"obs": self._observations_buffer, "states": None}
 
     def pre_physics_step(self, actions) -> None:
         if not self._env._world.is_playing():
@@ -80,7 +92,8 @@ class CartpoleTask(SimpleRLTask):
         if len(reset_env_ids) > 0:
             self.reset_idx(reset_env_ids)
 
-        actions = torch.clamp(actions, -self.clip_actions, self.clip_actions).to(self._device).clone()
+        # actions = torch.clamp(actions, -self.clip_actions, self.clip_actions).to(self._device).clone()
+        actions = actions.to(self._device)
 
         forces = torch.zeros(
             (self._cartpoles.count, self._cartpoles.num_dof),
@@ -122,8 +135,9 @@ class CartpoleTask(SimpleRLTask):
         self._cart_dof_idx = self._cartpoles.get_dof_index("cartJoint")
         self._pole_dof_idx = self._cartpoles.get_dof_index("poleJoint")
         # randomize all envs
-        indices = torch.arange(self._cartpoles.count, dtype=torch.int64, device=self._device)
-        self.reset_idx(indices)
+        if self._do_reset:
+            indices = torch.arange(self._cartpoles.count, dtype=torch.int64, device=self._device)
+            self.reset_idx(indices)
 
     def calculate_metrics(self) -> None:
         cart_pos = self._observations_buffer[:, 0]
@@ -152,6 +166,3 @@ class CartpoleTask(SimpleRLTask):
         self._done_buffer[:] = resets
 
         return self._done_buffer
-
-    def run_test(self, action: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, Any]:
-        return self._env.step(action)
