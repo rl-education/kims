@@ -14,7 +14,7 @@ from rl_games.algos_torch import torch_ext
 from rl_games.common import env_configurations, vecenv
 from rl_games.common.algo_observer import AlgoObserver
 from rl_games.torch_runner import Runner
-from rl_simulation_class.utils.config import Config
+from rl_simulation_class.utils.config import Config, RLGamesConfig
 
 
 class MultiEnvRLTask(BaseTask, ABC):
