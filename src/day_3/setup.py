@@ -10,7 +10,7 @@ setup(
     keywords=["robotics", "rl"],
     include_package_data=True,
     install_requires=[
-        "gym == 0.21.0",
+        "numpy ~= 1.20.0",
     ],
     packages=find_packages("."),
     classifiers=["Programming Language :: Python :: 3.8"],
