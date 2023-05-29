@@ -71,7 +71,6 @@ class CartpoleTask(MultiEnvRLTask):
         self._cartpoles = ArticulationView(
             prim_paths_expr=f"{self.default_base_path}/.*/Cartpole",
             name="cartpole_view",
-            reset_xform_properties=False,
         )
         # add the cartpoles to the scene
         scene.add(self._cartpoles)

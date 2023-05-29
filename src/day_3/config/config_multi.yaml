@@ -20,4 +20,4 @@ checkpoint: ""
 launch_type: "livestream"
 
 # number of actors
-num_envs: 100
+num_envs: 10
