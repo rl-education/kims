@@ -1,3 +1,4 @@
+import dataclasses
 from abc import ABC, abstractmethod
 from typing import Optional
 
@@ -12,11 +13,11 @@ from omni.isaac.gym.vec_env import VecEnvBase
 from rl_games.algos_torch import torch_ext
 from rl_games.common import env_configurations, vecenv
 from rl_games.common.algo_observer import AlgoObserver
+from rl_games.torch_runner import Runner
 from rl_simulation_class.utils.config import Config
 
 
 class MultiEnvRLTask(BaseTask, ABC):
-
     """
     Multi Environment Interface for RL tasks.
     """
@@ -99,6 +100,9 @@ class MultiEnvRLTask(BaseTask, ABC):
         self.set_initial_camera_params(camera_position=[10, 10, 3], camera_target=[0, 0, 0])
 
     def clone_environments(self) -> None:
+        """Clones environments based on value provided in task config
+        and applies collision filters to disable collisions across environments.
+        """
         collision_filter_global_paths = [self._ground_plane_path]
         prim_paths = self._cloner.generate_paths(f"{self.default_base_path}/env", self._num_envs)
         self._env_pos = self._cloner.clone(
@@ -114,6 +118,12 @@ class MultiEnvRLTask(BaseTask, ABC):
         )
 
     def set_initial_camera_params(self, camera_position=[10, 10, 3], camera_target=[0, 0, 0]):
+        """Sets initial camera parameters.
+
+        Args:
+            camera_position (list, optional): The camera position. Defaults to [10, 10, 3].
+            camera_target (list, optional): The camera target. Defaults to [0, 0, 0].
+        """
         set_camera_view(eye=camera_position, target=camera_target, camera_prim_path="/OmniverseKit_Persp")
 
     @property
@@ -210,10 +220,12 @@ class MultiEnvRLTask(BaseTask, ABC):
 class RLGPUAlgoObserver(AlgoObserver):
     """Allows us to log stats from the env along with the algorithm running stats."""
 
-    def __init__(self):
-        pass
-
     def after_init(self, algo):
+        """Called after the algorithm is initialized.
+
+        Args:
+            algo: the rl games algorithm
+        """
         self.algo = algo
         self.mean_scores = torch_ext.AverageMeter(1, self.algo.games_to_track).to(self.algo.ppo_device)
         self.ep_infos = []
@@ -221,6 +233,12 @@ class RLGPUAlgoObserver(AlgoObserver):
         self.writer = self.algo.writer
 
     def process_infos(self, infos, done_indices):
+        """Process the infos from the env.
+
+        Args:
+            infos (dict): the info dict from the env
+            done_indices: the indices of the envs that are done
+        """
         assert isinstance(infos, dict), "RLGPUAlgoObserver expects dict info"
         if isinstance(infos, dict):
             if "episode" in infos:
@@ -238,9 +256,17 @@ class RLGPUAlgoObserver(AlgoObserver):
                         self.direct_info[k] = v
 
     def after_clear_stats(self):
+        """Called after the stats are cleared."""
         self.mean_scores.clear()
 
     def after_print_stats(self, frame, epoch_num, total_time):
+        """Called after the stats are printed.
+
+        Args:
+            frame: the current frame
+            epoch_num: the current epoch
+            total_time: the total time elapsed
+        """
         if self.ep_infos:
             for key in self.ep_infos[0]:
                 infotensor = torch.tensor([], device=self.algo.device)
@@ -268,6 +294,8 @@ class RLGPUAlgoObserver(AlgoObserver):
 
 
 class RLGPUEnv(vecenv.IVecEnv):
+    """RLGPUEnv is a wrapper around the IVecEnv that allows us to use the VecEnvBase class."""
+
     def __init__(self, config_name, num_actors, **kwargs):
         self.env = env_configurations.configurations[config_name]["env_creator"](**kwargs)
 
@@ -288,3 +316,36 @@ class RLGPUEnv(vecenv.IVecEnv):
         print(info["action_space"], info["observation_space"])
 
         return info
+
+
+class RLGTrainer:
+    """Class to run the RL Games trainer."""
+
+    def __init__(self, env, config: RLGamesConfig):
+        vecenv.register(
+            "RLGPU",
+            lambda config_name, num_actors, **kwargs: RLGPUEnv(config_name, num_actors, **kwargs),
+        )
+        env_configurations.register(
+            "rlgpu",
+            {
+                "vecenv_type": "RLGPU",
+                "env_creator": lambda **kwargs: env,
+            },
+        )
+        self.rlg_config_dict = dataclasses.asdict(config)
+
+    def run(self, train: bool = True, checkpoint: str = None, sigma: float = None):
+        # create runner and set the settings
+        runner = Runner(RLGPUAlgoObserver())
+        runner.load(self.rlg_config_dict)
+        runner.reset()
+
+        runner.run(
+            {
+                "train": train,
+                "play": not train,
+                "checkpoint": checkpoint,
+                "sigma": sigma,
+            },
+        )

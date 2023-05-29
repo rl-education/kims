@@ -11,7 +11,6 @@ from rl_simulation_class.utils.config import Config
 
 
 class SimpleRLTask(BaseTask, ABC):
-
     """
     Simple Interface for RL tasks.
     """
@@ -88,6 +87,12 @@ class SimpleRLTask(BaseTask, ABC):
         self.set_initial_camera_params(camera_position=[10, 10, 3], camera_target=[0, 0, 0])
 
     def set_initial_camera_params(self, camera_position=[10, 10, 3], camera_target=[0, 0, 0]):
+        """Sets initial camera parameters.
+
+        Args:
+            camera_position (list, optional): The camera position. Defaults to [10, 10, 3].
+            camera_target (list, optional): The camera target. Defaults to [0, 0, 0].
+        """
         set_camera_view(eye=camera_position, target=camera_target, camera_prim_path="/OmniverseKit_Persp")
 
     @property

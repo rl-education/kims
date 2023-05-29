@@ -10,6 +10,8 @@ from rl_simulation_class.utils.vec_env import IsaacLaunchType
 @dataclass_json
 @dataclass
 class CartpoleTask:
+    """Cartpole task configuration."""
+
     num_envs: int = 1
     env_spacing: float = 4.0
     reset_dist: float = 3.0
@@ -24,6 +26,8 @@ class CartpoleTask:
 @dataclass_json
 @dataclass
 class CartpoleConfig:
+    """Cartpole Environment configuration."""
+
     name: str = "cartpole"
     cartpole_file: str = ""
     add_ground_plane: bool = True
@@ -33,6 +37,8 @@ class CartpoleConfig:
 @dataclass_json
 @dataclass
 class RLGamesConfig:
+    """RL Games Policy configuration."""
+
     name: str = "rl-games"
     params: Dict[Any, Any] = field(default_factory=dict)
 
@@ -40,8 +46,11 @@ class RLGamesConfig:
 @dataclass_json
 @dataclass
 class SB3Config:
+    """Stable Baselines 3 Policy configuration."""
+
     name: str = "sb3"
     policy: str = "MlpPolicy"
+    max_steps: int = 10000
     n_steps: int = 1000
     batch_size: int = 1000
     n_epochs: int = 20
@@ -58,6 +67,8 @@ class SB3Config:
 @dataclass_json
 @dataclass
 class Config:
+    """Configuration for the RL simulation class."""
+
     task_config_file: str
     policy_config_file: str
     config_path: str = ""
@@ -82,7 +93,7 @@ def load_config(config_path: str, config_file_name: str) -> Config:
         config.device = "cuda" if torch.cuda.is_available() else "cpu"
     config.task_config = load_task_config(config_path, config)
     if isinstance(config.task_config, CartpoleConfig):
-        config.num_envs = config.task_config.task.num_envs
+        config.task_config.task.num_envs = config.num_envs
     config.policy_config = load_policy_config(config_path, config)
     if isinstance(config.policy_config, RLGamesConfig) and "config" in config.policy_config.params:
         config.policy_config.params["config"]["device"] = config.device

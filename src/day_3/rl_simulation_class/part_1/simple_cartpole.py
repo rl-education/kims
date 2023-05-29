@@ -5,6 +5,7 @@ import numpy as np
 import torch
 from gym import spaces
 from omni.isaac.core.articulations import ArticulationView
+from omni.isaac.core.scenes.scene import Scene
 from omni.isaac.core.utils.nucleus import get_assets_root_path
 from omni.isaac.core.utils.prims import create_prim
 from omni.isaac.core.utils.stage import add_reference_to_stage
@@ -14,6 +15,8 @@ from rl_simulation_class.utils.config import CartpoleConfig, Config
 
 
 class CartpoleTask(SimpleRLTask):
+    """Cartpole task for single environment RL training."""
+
     def __init__(self, name: str, config: Config, env: VecEnvBase, offset=None) -> None:
         self._config = config
         assert isinstance(self._config.task_config, CartpoleConfig)
@@ -36,7 +39,12 @@ class CartpoleTask(SimpleRLTask):
 
         super().__init__(name, env, self._config, offset)
 
-    def set_up_scene(self, scene) -> None:
+    def set_up_scene(self, scene: Scene) -> None:
+        """Method used to load the objects in the scene.
+
+        Args:
+            scene (Scene): The scene to load the objects into.
+        """
         assert isinstance(self._config.task_config, CartpoleConfig)
         super().set_up_scene(scene)
         # retrieve file path for the Cartpole USD file
@@ -57,37 +65,54 @@ class CartpoleTask(SimpleRLTask):
             prim_paths_expr=f"{self.default_base_path}/Cartpole*",
             name="cartpole_view",
         )
-        # add Cartpole ArticulationView and ground plane to the Scene
+        # add Cartpole ArticulationView to the Scene
         scene.add(self._cartpoles)
 
     def reset(self) -> None:
+        """The reset function is called by the VecEnvBase class to reset the environment."""
+        # set all environments to done
         self._done_buffer = torch.ones_like(self._done_buffer)
 
-    def pre_physics_step(self, actions) -> None:
+    def pre_physics_step(self, actions: np.ndarray) -> None:
+        """This function is called before the physics step is executed.
+
+        Args:
+            actions (np.ndarray): The actions to be executed.
+        """
         if not self._env._world.is_playing():
             return
 
+        # check if any environment is done
         reset_env_ids = self._done_buffer.nonzero(as_tuple=False).squeeze(-1)
         if len(reset_env_ids) > 0:
             self.reset_idx(reset_env_ids)
+
+        # generate joint efforts from actions
+        actions = torch.tensor(actions)
 
         forces = torch.zeros(
             (self._cartpoles.count, self._cartpoles.num_dof),
             dtype=torch.float32,
             device=self._device,
         )
-
-        actions = torch.tensor(actions)
-
         forces[:, self._cart_dof_idx] = self._max_push_effort * actions[0]
 
+        # apply joint efforts
         indices = torch.arange(self._cartpoles.count, dtype=torch.int32, device=self._device)
         self._cartpoles.set_joint_efforts(forces, indices=indices)
 
-    def get_observations(self) -> dict:
+    def get_observations(self) -> torch.Tensor:
+        """Get the observations from the environment.
+
+        Returns:
+            torch.Tensor: A tensor containing the observations. It should be in the cpu device.
+        """
+        # get the positions for all the joints
         dof_pos = self._cartpoles.get_joint_positions(clone=False)
+        # get the velocities for all the joints
         dof_vel = self._cartpoles.get_joint_velocities(clone=False)
 
+        # organize the cartpole positions and velocities
         cart_pos = dof_pos[:, self._cart_dof_idx]
         cart_vel = dof_vel[:, self._cart_dof_idx]
         pole_pos = dof_pos[:, self._pole_dof_idx]
@@ -100,7 +125,12 @@ class CartpoleTask(SimpleRLTask):
 
         return self._observations_buffer.cpu()
 
-    def reset_idx(self, env_ids):
+    def reset_idx(self, env_ids: torch.Tensor) -> None:
+        """Reset the environment for the given environment ids.
+
+        Args:
+            env_ids (torch.Tensor): The environment ids to reset.
+        """
         num_resets = len(env_ids)
 
         # randomize DOF positions
@@ -127,13 +157,22 @@ class CartpoleTask(SimpleRLTask):
         self._episodes_count[env_ids] = 0
 
     def post_reset(self):
+        """This function is called after the environment is reset.
+        We can use it to get the values which are only available after the environment is reset.
+        """
+        # get the dof indices for the cart and pole joints
         self._cart_dof_idx = self._cartpoles.get_dof_index("cartJoint")
         self._pole_dof_idx = self._cartpoles.get_dof_index("poleJoint")
         # randomize all envs
         indices = torch.arange(self._cartpoles.count, dtype=torch.int64, device=self._device)
         self.reset_idx(indices)
 
-    def calculate_metrics(self) -> None:
+    def calculate_metrics(self) -> float:
+        """Generate the reward
+
+        Returns:
+            float: The reward for the current step.
+        """
         cart_pos = self._observations_buffer[:, 0]
         cart_vel = self._observations_buffer[:, 1]
         pole_angle = self._observations_buffer[:, 2]
@@ -148,7 +187,12 @@ class CartpoleTask(SimpleRLTask):
 
         return reward.item()
 
-    def is_done(self) -> None:
+    def is_done(self) -> bool:
+        """returns true if the environment is done, false otherwise
+
+        Returns:
+            bool: True if the environment is done, false otherwise
+        """
         cart_pos = self._observations_buffer[:, 0]
         pole_pos = self._observations_buffer[:, 2]
 

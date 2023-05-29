@@ -31,7 +31,10 @@ model = PPO(
     tensorboard_log=config.policy_config.tensorboard_log,
 )
 
-model.learn(total_timesteps=100000)
+model.learn(total_timesteps=config.policy_config.max_steps)
 model.save("ppo_cartpole")
 
 env.close()
+
+if __name__ == "__main__":
+    pass

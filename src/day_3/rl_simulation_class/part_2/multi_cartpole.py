@@ -5,6 +5,7 @@ import numpy as np
 import torch
 from gym import spaces
 from omni.isaac.core.articulations import ArticulationView
+from omni.isaac.core.scenes.scene import Scene
 from omni.isaac.core.utils.nucleus import get_assets_root_path
 from omni.isaac.core.utils.prims import create_prim
 from omni.isaac.core.utils.stage import add_reference_to_stage
@@ -14,6 +15,8 @@ from rl_simulation_class.utils.config import CartpoleConfig, Config
 
 
 class CartpoleTask(MultiEnvRLTask):
+    """Cartpole task for multi environment RL training."""
+
     def __init__(self, name: str, config: Config, env: VecEnvBase, offset=None) -> None:
         self._config = config
         assert isinstance(self._config.task_config, CartpoleConfig)
@@ -41,7 +44,12 @@ class CartpoleTask(MultiEnvRLTask):
 
         super().__init__(name, env, self._config, offset)
 
-    def set_up_scene(self, scene) -> None:
+    def set_up_scene(self, scene: Scene) -> None:
+        """Method used to load the objects in the scene.
+
+        Args:
+            scene (Scene): The scene to load the objects into.
+        """
         assert isinstance(self._config.task_config, CartpoleConfig)
         super().set_up_scene(scene)
         # retrieve file path for the Cartpole USD file
@@ -57,21 +65,62 @@ class CartpoleTask(MultiEnvRLTask):
             position=self._cartpole_position,
         )
         add_reference_to_stage(usd_path, f"{self.default_base_path}/env_0/Cartpole")
+        # clone the Cartpole USD to create multiple Cartpoles
         self.clone_environments()
+        # create an ArticulationView to control the Cartpoles
         self._cartpoles = ArticulationView(
             prim_paths_expr=f"{self.default_base_path}/.*/Cartpole",
             name="cartpole_view",
             reset_xform_properties=False,
         )
+        # add the cartpoles to the scene
         scene.add(self._cartpoles)
 
     def reset(self) -> None:
+        """The reset function is called by the VecEnvBase class to reset the environment."""
+        # set all environments to done
         self._done_buffer = torch.ones_like(self._done_buffer)
 
+    def pre_physics_step(self, actions: torch.Tensor) -> None:
+        """This function is called before the physics step is executed.
+
+        Args:
+            actions (torch.Tensor): The actions to be executed with shape (num_envs, num_actions).
+        """
+        if not self._env._world.is_playing():
+            return
+
+        # check if any environment is done
+        reset_env_ids = self._done_buffer.nonzero(as_tuple=False).squeeze(-1)
+        if len(reset_env_ids) > 0:
+            self.reset_idx(reset_env_ids)
+
+        # generate joint efforts from actions
+        actions = actions.to(self._device)
+
+        forces = torch.zeros(
+            (self._cartpoles.count, self._cartpoles.num_dof),
+            dtype=torch.float32,
+            device=self._device,
+        )
+        forces[:, self._cart_dof_idx] = self._max_push_effort * actions[:, 0]
+
+        # apply joint efforts
+        indices = torch.arange(self._cartpoles.count, dtype=torch.int32, device=self._device)
+        self._cartpoles.set_joint_efforts(forces, indices=indices)
+
     def get_observations(self) -> dict:
+        """Get the observations from the environment.
+
+        Returns:
+            dict: A dictionary containing the observations (with shape (num_envs, num_observations)) and states (None).
+        """
+        # get the positions for all the joints
         dof_pos = self._cartpoles.get_joint_positions(clone=False)
+        # get the velocities for all the joints
         dof_vel = self._cartpoles.get_joint_velocities(clone=False)
 
+        # organize the cartpole positions and velocities
         cart_pos = dof_pos[:, self._cart_dof_idx]
         cart_vel = dof_vel[:, self._cart_dof_idx]
         pole_pos = dof_pos[:, self._pole_dof_idx]
@@ -84,28 +133,12 @@ class CartpoleTask(MultiEnvRLTask):
 
         return {"obs": self._observations_buffer, "states": None}
 
-    def pre_physics_step(self, actions) -> None:
-        if not self._env._world.is_playing():
-            return
+    def reset_idx(self, env_ids: torch.Tensor) -> None:
+        """Reset the environment for the given environment ids.
 
-        reset_env_ids = self._done_buffer.nonzero(as_tuple=False).squeeze(-1)
-        if len(reset_env_ids) > 0:
-            self.reset_idx(reset_env_ids)
-
-        # actions = torch.clamp(actions, -self.clip_actions, self.clip_actions).to(self._device).clone()
-        actions = actions.to(self._device)
-
-        forces = torch.zeros(
-            (self._cartpoles.count, self._cartpoles.num_dof),
-            dtype=torch.float32,
-            device=self._device,
-        )
-        forces[:, self._cart_dof_idx] = self._max_push_effort * actions[:, 0]
-
-        indices = torch.arange(self._cartpoles.count, dtype=torch.int32, device=self._device)
-        self._cartpoles.set_joint_efforts(forces, indices=indices)
-
-    def reset_idx(self, env_ids):
+        Args:
+            env_ids (torch.Tensor): The environment ids to reset.
+        """
         num_resets = len(env_ids)
 
         # randomize DOF positions
@@ -132,6 +165,10 @@ class CartpoleTask(MultiEnvRLTask):
         self._episodes_count[env_ids] = 0
 
     def post_reset(self):
+        """This function is called after the environment is reset.
+        We can use it to get the values which are only available after the environment is reset.
+        """
+        # get the dof indices for the cart and pole joints
         self._cart_dof_idx = self._cartpoles.get_dof_index("cartJoint")
         self._pole_dof_idx = self._cartpoles.get_dof_index("poleJoint")
         # randomize all envs
@@ -139,7 +176,12 @@ class CartpoleTask(MultiEnvRLTask):
             indices = torch.arange(self._cartpoles.count, dtype=torch.int64, device=self._device)
             self.reset_idx(indices)
 
-    def calculate_metrics(self) -> None:
+    def calculate_metrics(self) -> torch.Tensor:
+        """Generate the reward
+
+        Returns:
+            torch.Tensor: The reward tensor with shape (num_envs, 1)
+        """
         cart_pos = self._observations_buffer[:, 0]
         cart_vel = self._observations_buffer[:, 1]
         pole_angle = self._observations_buffer[:, 2]
@@ -156,7 +198,12 @@ class CartpoleTask(MultiEnvRLTask):
 
         return self._rewards_buffer
 
-    def is_done(self) -> None:
+    def is_done(self) -> torch.Tensor:
+        """returns true if the environment is done, for each environment.
+
+        Returns:
+            torch.Tensor: The done tensor with shape (num_envs, 1)
+        """
         cart_pos = self._observations_buffer[:, 0]
         pole_pos = self._observations_buffer[:, 2]
 
