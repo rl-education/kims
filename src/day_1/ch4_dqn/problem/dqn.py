@@ -7,6 +7,7 @@ Reference:
 """
 import time
 from collections import deque
+from datetime import datetime
 
 import numpy as np
 import torch
@@ -15,6 +16,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from gym import Env
 from replay_buffer import ReplayBuffer
+from torch.utils.tensorboard import SummaryWriter
 
 USE_CUDA = torch.cuda.is_available()
 DEVICE = torch.device("cuda" if USE_CUDA else "cpu")
@@ -47,7 +49,7 @@ class DQN:
         state_dim: int,
         action_num: int,
         gamma: float = 0.99,
-        num_steps: int = 100000,
+        num_steps: int = 1000000,
         batch_size: int = 32,
         epsilon: float = 1.0,
         epsilon_decay: float = 0.995,
@@ -75,6 +77,12 @@ class DQN:
 
         # Initialize parameters of target model to match parameters of current model
         self.update_target()
+
+        # Initialize tensorbaord to visualize results
+        algorithm = "ddqn" if use_ddqn else "dqn"
+        self.writer = SummaryWriter(
+            log_dir=f"./runs/cartpole-{algorithm}-" + datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        )
 
     def select_action(self, state: np.ndarray) -> np.ndarray:
         """Select an action from the set of available actions."""
@@ -144,7 +152,7 @@ class DQN:
         loss = 0.0
         episode_idx = 0
         episode_reward = 0
-        recent_rewards = deque(maxlen=5)
+        recent_rewards = deque(maxlen=10)
 
         state = self.env.reset()
         for step_idx in range(1, self.num_steps + 1):
@@ -167,6 +175,10 @@ class DQN:
                     f"loss: {loss}\n",
                 )
 
+                # Visualize results within tensorboard
+                self.writer.add_scalar("train/episode_reward", episode_reward, episode_idx)
+                self.writer.add_scalar("train/loss", loss, episode_idx)
+
                 state = self.env.reset()
                 recent_rewards.append(episode_reward)
                 episode_idx += 1
@@ -180,8 +192,9 @@ class DQN:
             if step_idx % 100 == 0:
                 self.update_target()
 
-            # If the rewards for all 5 of the most recent episodes are 500, stop training
-            if np.mean(recent_rewards) == 500:
+            # If the rewards for all 10 of the most recent episodes are 490, stop training
+            if np.mean(recent_rewards) > 490:
+                print(f"\nrecent_rewards: {recent_rewards}\n")
                 break
 
     def test(self) -> None:
@@ -205,6 +218,8 @@ class DQN:
                     f"episode_idx: {episode_idx}\n"
                     f"episode_reward: {episode_reward}\n",
                 )
+
+                self.writer.add_scalar("test/episode_reward", episode_reward, episode_idx)
 
                 state = self.env.reset()
                 episode_idx += 1
