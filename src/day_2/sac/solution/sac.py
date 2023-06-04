@@ -120,15 +120,6 @@ class NormalizedActions(gym.ActionWrapper):
 
         return action
 
-    def reverse_action(self, action: np.ndarray) -> np.ndarray:
-        low = self.action_space.low
-        high = self.action_space.high
-
-        action = 2 * (action - low) / (high - low) - 1
-        action = np.clip(action, low, high)
-
-        return actions
-
 
 class SAC:
     """Soft actor critic method."""

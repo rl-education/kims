@@ -110,11 +110,10 @@ class DDPG:
         soft_tau: float = 1e-2,
         epsilon: float = 1e-6,
     ):
-        self.env_name = env_name
-        self.env: gym.Env = NormalizedActions(gym.make(self.env_name))
+        self.env: gym.Env = NormalizedActions(gym.make(env_name))
 
-        state_dim = self.env.observation_space.shape[0]  # type: ignore
-        num_actions = self.env.action_space.shape[0]  # type: ignore
+        state_dim = self.env.observation_space.shape[0]
+        num_actions = self.env.action_space.shape[0]
         self.action_noise = 0.1
 
         self.value_net = ValueNetwork(
