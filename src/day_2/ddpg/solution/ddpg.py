@@ -193,11 +193,11 @@ class DDPG:
 
     def test(self, render: bool = False) -> float:
         """."""
-        render_mode = "human" if render else None
         state = self.env.reset()
         total_reward = 0.0
         for _ in range(self.max_steps):
-            self.env.render(mode=render_mode)
+            if render:
+                self.env.render(mode="human")
             action = self.get_action(state=state)
             next_state, reward, done, _ = self.env.step(action)
             state = next_state

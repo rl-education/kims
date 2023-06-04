@@ -6,10 +6,9 @@ Reference:
 
 from typing import Generator
 
-import gymnasium as gym
+import gym
 import numpy as np
 import torch
-from icecream import ic
 from torch import nn, optim
 from torch.nn import functional as F
 from tqdm import trange
@@ -77,8 +76,9 @@ class PPO:
         # Create environments
         self.env_name = env_name
         self.env = gym.vector.make(self.env_name, num_envs=num_envs)
-        state_dim = self.env.observation_space.shape[1]  # type: ignore
-        num_actions = self.env.action_space.shape[1]  # type: ignore
+        self.test_env = gym.make(self.env_name)
+        state_dim = self.env.observation_space.shape[1]
+        num_actions = self.env.action_space[0].shape[0]
 
         # Create actor-critic network
         self.actor = ActorNetwork(
@@ -187,7 +187,7 @@ class PPO:
         self,
     ) -> None:
         """Learn model with PPO."""
-        state, _ = self.env.reset()
+        state = self.env.reset()
 
         step = 0
         test_rewards = []
@@ -206,8 +206,7 @@ class PPO:
                 value = self.critic(state)
 
                 action = dist.sample()
-                next_state, reward, terminate, truncate, _ = self.env.step(action.cpu().numpy())
-                done = np.any((terminate, truncate), axis=0)
+                next_state, reward, done, _ = self.env.step(action.cpu().numpy())
 
                 log_prob = dist.log_prob(action)
                 entropy += dist.entropy().mean()
@@ -221,11 +220,11 @@ class PPO:
                 actions.append(action)
 
                 if done.all():
-                    next_state, _ = self.env.reset()
+                    next_state = self.env.reset()
                 state = next_state
                 step += 1
 
-            next_state = torch.FloatTensor(next_state)  # type: ignore[reportUnboundVariable]
+            next_state = torch.FloatTensor(next_state)
             next_value = self.critic(next_state)
             returns = self.compute_gae(next_value, rewards, masks, values)
 
@@ -246,23 +245,24 @@ class PPO:
 
             test_reward = np.mean([self.test() for _ in range(10)])
             test_rewards.append(test_reward)
-            ic(test_reward)
+            print("test_reward", test_reward)
 
     def test(self, render: bool = False) -> float:
         """."""
-        render_mode = "human" if render else None
-        env = gym.make(self.env_name, render_mode=render_mode)
-        state, _ = env.reset()
-        done = False
+        state = self.test_env.reset()
         total_reward = 0.0
-        while not done:
+        for _ in range(500):
+            if render:
+                self.test_env.render(mode="human")
             state = torch.FloatTensor(state).unsqueeze(0)
             dist = self.actor(state)
             action = dist.sample().cpu().numpy()[0]
-            next_state, reward, terminate, truncate, _ = env.step(action)
-            done = terminate or truncate
+            next_state, reward, done, _ = self.test_env.step(action)
             state = next_state
             total_reward += float(reward)
+
+            if done:
+                break
 
         return total_reward
 
