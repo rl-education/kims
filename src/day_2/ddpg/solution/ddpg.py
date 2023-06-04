@@ -6,7 +6,7 @@ Reference:
 
 import random
 
-import gymnasium as gym
+import gym
 import numpy as np
 import torch
 from torch import nn, optim
@@ -171,13 +171,12 @@ class DDPG:
         rewards = []
 
         while frame_idx < self.max_frames:
-            state, _ = self.env.reset()
+            state = self.env.reset()
             episode_reward = 0
 
             for _ in range(self.max_steps):
                 action = self.get_action(state)
-                next_state, reward, terminate, truncate, _ = self.env.step(action)
-                done = terminate or truncate
+                next_state, reward, done, _ = self.env.step(action)
 
                 self.replay_buffer.push(state, action, reward, next_state, done)
                 if len(self.replay_buffer) > self.batch_size:
@@ -195,16 +194,17 @@ class DDPG:
     def test(self, render: bool = False) -> float:
         """."""
         render_mode = "human" if render else None
-        env = gym.make(self.env_name, render_mode=render_mode)
-        state, _ = env.reset()
-        done = False
+        state = self.env.reset()
         total_reward = 0.0
-        while not done:
+        for _ in range(self.max_steps):
+            self.env.render(mode=render_mode)
             action = self.get_action(state=state)
-            next_state, reward, terminate, truncate, _ = env.step(action)
-            done = terminate or truncate
+            next_state, reward, done, _ = self.env.step(action)
             state = next_state
             total_reward += float(reward)
+
+            if done:
+                break
 
         return total_reward
 
