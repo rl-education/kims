@@ -82,40 +82,6 @@ class PolicyNetwork(nn.Module):
         return self.layers(x)
 
 
-class OUNoise(object):
-    """Ornstein-Uhlenbeck process which adding time-correlated noise to the actions.
-
-    Reference:
-        #https://github.com/vitchyr/rlkit/blob/master/rlkit/exploration_strategies/ou_strategy.py
-    """
-
-    def __init__(self, action_space, mu=0.0, theta=0.15, max_sigma=0.3, min_sigma=0.3, decay_period=100000):
-        self.mu = mu
-        self.theta = theta
-        self.sigma = max_sigma
-        self.max_sigma = max_sigma
-        self.min_sigma = min_sigma
-        self.decay_period = decay_period
-        self.action_dim = action_space.shape[0]
-        self.low = action_space.low
-        self.high = action_space.high
-        self.reset()
-
-    def reset(self):
-        self.state = np.ones(self.action_dim) * self.mu
-
-    def evolve_state(self):
-        x = self.state
-        dx = self.theta * (self.mu - x) + self.sigma * np.random.randn(self.action_dim)
-        self.state = x + dx
-        return self.state
-
-    def get_action(self, action, t=0):
-        ou_state = self.evolve_state()
-        self.sigma = self.max_sigma - (self.max_sigma - self.min_sigma) * min(1.0, t / self.decay_period)
-        return np.clip(action + ou_state, self.low, self.high)
-
-
 class NormalizedActions(gym.ActionWrapper):
     def action(self, action: np.ndarray):
         low = self.action_space.low
@@ -125,15 +91,6 @@ class NormalizedActions(gym.ActionWrapper):
         action = np.clip(action, low, high)
 
         return action
-
-    def reverse_action(self, action: np.ndarray) -> np.ndarray:
-        low = self.action_space.low
-        high = self.action_space.high
-
-        action = 2 * (action - low) / (high - low) - 1
-        action = np.clip(action, low, high)
-
-        return actions
 
 
 class DDPG:
@@ -155,10 +112,10 @@ class DDPG:
     ):
         self.env_name = env_name
         self.env: gym.Env = NormalizedActions(gym.make(self.env_name))
-        self.ou_noise = OUNoise(self.env.action_space)
 
         state_dim = self.env.observation_space.shape[0]  # type: ignore
         num_actions = self.env.action_space.shape[0]  # type: ignore
+        self.action_noise = 0.1
 
         self.value_net = ValueNetwork(
             state_dim=state_dim,
@@ -256,7 +213,7 @@ class DDPG:
         state_tensor = torch.FloatTensor(state).unsqueeze(0).to(DEVICE)
         action = self.policy_net(state_tensor)
         action = action.detach().cpu().numpy()[0, 0]
-        action = self.ou_noise.get_action(action)
+        action += self.action_noise * np.random.randn(self.env.action_space.shape[0])
         return action
 
     def ddpg_update(self) -> None:
