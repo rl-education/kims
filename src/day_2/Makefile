@@ -6,4 +6,4 @@ format:
 	make -C ../../ format
 
 tensorboard:
-	tensorboard --logdir=runs
+	tensorboard --logdir=runs &
