@@ -74,6 +74,17 @@ class PolicyNetwork(nn.Module):
         return mean, log_std.exp()
 
 
+class NormalizedActions(gym.ActionWrapper):
+    def action(self, action: np.ndarray):
+        low = self.action_space.low
+        high = self.action_space.high
+
+        action = low + (action + 1.0) * 0.5 * (high - low)
+        action = np.clip(action, low, high)
+
+        return action
+
+
 class REINFORCE:
     """REINFORCE Trainer."""
 
@@ -84,7 +95,7 @@ class REINFORCE:
         gamma: float = 0.99,
         learning_rate: float = 0.001,
     ):
-        self.env = gym.make(env_name)
+        self.env = NormalizedActions(gym.make(env_name))
 
         state_dim = self.env.observation_space.shape[0]
         action_dim = self.env.action_space.shape[0]
@@ -110,9 +121,13 @@ class REINFORCE:
         """
         for episode_idx in trange(n_episodes):
             episode = self.run_episode()
-            loss = self.update_policy_net_with_baseline(episode)
-            self.logger.add_scalar("train/episode_reward", sum(episode.rewards), episode_idx)
-            self.logger.add_scalar("train/loss", loss, episode_idx)
+            loss = self.update_policy_net(episode)
+
+            # Log metrics
+            self.logger.add_scalar("train/_episode_reward", sum(episode.rewards), episode_idx)
+            self.logger.add_scalar("train/_loss", loss, episode_idx)
+            for step in range(len(episode)):
+                self.logger.add_scalar(f"train/entropy-{step}", episode.log_action_probs[step], episode_idx)
 
     def test(self, n_episodes: int = 1, render: bool = False) -> None:
         """Test agent."""
@@ -129,7 +144,7 @@ class REINFORCE:
         while not done:
             if render:
                 self.env.render(mode="human")
-            action, action_log_prob = self.get_action_and_log_prob(state)
+            action, action_log_prob = self.get_action(state)
 
             # action is in [-1, 1] but the environment expects actions in [-2, 2]
             next_state, reward, done, _ = self.env.step(action * 2)
@@ -140,12 +155,9 @@ class REINFORCE:
                 float(reward),
             )
             state = next_state
-
-            if done:
-                break
         return episode
 
-    def get_action_and_log_prob(self, state: np.ndarray) -> tuple[int, Tensor]:
+    def get_action(self, state: np.ndarray) -> tuple[int, Tensor]:
         """Compute the action and log policy probability.
 
         Notes:
