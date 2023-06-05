@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass, field
 from datetime import datetime
+from pathlib import Path
 
 import gym
 import numpy as np
@@ -13,6 +14,7 @@ from tqdm import trange
 
 USE_CUDA = torch.cuda.is_available()
 DEVICE = torch.device("cuda" if USE_CUDA else "cpu")
+TENSORBOARD_DIR = Path(__file__).parent.parent.parent / "runs"
 
 
 @dataclass
@@ -97,7 +99,7 @@ class REINFORCE:
         self.optimizer = optim.Adam(self.policy_net.parameters(), lr=learning_rate)
 
         self.logger = SummaryWriter(
-            log_dir=f"./runs/pendulum-reinforce-{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+            log_dir=TENSORBOARD_DIR / f"reinforce-{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
         )
 
     def train(self, n_episodes: int) -> None:
