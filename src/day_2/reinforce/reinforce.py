@@ -8,7 +8,6 @@ import gym
 import numpy as np
 import torch
 from torch import Tensor, nn, optim
-from torch.nn import functional as F
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import trange
 
