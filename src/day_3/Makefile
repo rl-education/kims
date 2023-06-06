@@ -29,6 +29,8 @@ get-remote-ip:
 GYM_VERSION := $(shell pip show gym | grep '^Version' | cut -f2 -d':')
 # if gym version is not 0.21.0, reinstall the requirements
 run-part-1:
+# kill running instances of isaac sim
+	kill -9 $(pgrep -f "kit")
 	if [ "$(GYM_VERSION)" != "0.21.0" ]; then \
 		$(ISAAC_PYTHON) -m pip uninstall -y -r requirements-part-2.txt; \
 		$(ISAAC_PYTHON) -m pip install -r requirements-part-1.txt; \
@@ -37,8 +39,15 @@ run-part-1:
 
 # if gym version is not 0.23.0, reinstall the requirements
 run-part-2:
+# kill running instances of isaac sim
+	kill -9 $(pgrep -f "kit")
 	if [ "$(GYM_VERSION)" != "0.23.0" ]; then \
 		$(ISAAC_PYTHON) -m pip uninstall -y -r requirements-part-1.txt; \
 		$(ISAAC_PYTHON) -m pip install -r requirements-part-2.txt; \
 	fi
 	$(ISAAC_PYTHON) rl_simulation_class/train_multi.py --config_path ${CURDIR}/config
+
+run-websocket:
+# kill running instances of isaac sim
+	kill -9 $(pgrep -f "kit")
+	/dli/task/isaac-sim/isaac-sim.headless.websocket.sh --allow-root
