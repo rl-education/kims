@@ -1,12 +1,13 @@
-import requests
 import glob
 import time
 
+import requests
+
 
 def wait_for_isaac_to_load():
-    '''
+    """
     Wait until the log string is found in the log file.
-    '''
+    """
     isaac_loaded_string = "Isaac Sim Headless Native App is loaded."
     log_gpath = "/root/.nvidia-omniverse/logs/Kit/Isaac-Sim/*/*.log"
 

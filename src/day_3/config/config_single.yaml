@@ -16,6 +16,7 @@ checkpoint: ""
 # headless: launch without GUI
 # render: launch with local GUI
 # livestream: streams the GUI to the Omniverse Streaming Client
+# websocket: streams the GUI to http://<server_IP>:8211/streaming/client
 launch_type: "livestream"
 # number of actors
 num_envs: 1

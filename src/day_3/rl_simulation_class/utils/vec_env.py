@@ -49,6 +49,7 @@ class IsaacLaunchType(Enum):
     HEADLESS = "headless"
     RENDER = "render"
     LIVESTREAM = "livestream"
+    WEBSOCKET = "websocket"
 
 
 class VecEnvBaseLivestream(VecEnvBase):
@@ -78,6 +79,8 @@ class VecEnvBaseLivestream(VecEnvBase):
         self.sim_frame_count = 0
         if launch_type == IsaacLaunchType.LIVESTREAM:
             self.enable_livestream()
+        elif launch_type == IsaacLaunchType.WEBSOCKET:
+            self.enable_websocket()
 
     def enable_livestream(self) -> None:
         """Enables livestreaming of the simulation."""
@@ -90,3 +93,14 @@ class VecEnvBaseLivestream(VecEnvBase):
         self._simulation_app.set_setting("/ngx/enabled", False)
         enable_extension("omni.kit.livestream.native")
         enable_extension("omni.services.streaming.manager")
+
+    def enable_websocket(self) -> None:
+        """Enables websocket for the simulation."""
+        from omni.isaac.core.utils.extensions import enable_extension
+
+        self._simulation_app.set_setting("/app/livestream/enabled", True)
+        self._simulation_app.set_setting("/app/window/drawMouse", True)
+        self._simulation_app.set_setting("/app/livestream/proto", "ws")
+        self._simulation_app.set_setting("/app/livestream/websocket/framerate_limit", 60)
+        self._simulation_app.set_setting("/ngx/enabled", False)
+        enable_extension("omni.services.streamclient.websocket")
