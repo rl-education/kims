@@ -30,7 +30,7 @@ GYM_VERSION := $(shell pip show gym | grep '^Version' | cut -f2 -d':')
 # if gym version is not 0.21.0, reinstall the requirements
 run-part-1:
 # kill running instances of isaac sim
-	kill -9 $(pgrep -f "kit")
+	kill -9 $(pgrep -f "kit") | true
 	if [ "$(GYM_VERSION)" != "0.21.0" ]; then \
 		$(ISAAC_PYTHON) -m pip uninstall -y -r requirements-part-2.txt; \
 		$(ISAAC_PYTHON) -m pip install -r requirements-part-1.txt; \
@@ -40,7 +40,7 @@ run-part-1:
 # if gym version is not 0.23.0, reinstall the requirements
 run-part-2:
 # kill running instances of isaac sim
-	kill -9 $(pgrep -f "kit")
+	kill -9 $(pgrep -f "kit") | true
 	if [ "$(GYM_VERSION)" != "0.23.0" ]; then \
 		$(ISAAC_PYTHON) -m pip uninstall -y -r requirements-part-1.txt; \
 		$(ISAAC_PYTHON) -m pip install -r requirements-part-2.txt; \
@@ -49,5 +49,5 @@ run-part-2:
 
 run-websocket:
 # kill running instances of isaac sim
-	kill -9 $(pgrep -f "kit")
+	kill -9 $(pgrep -f "kit") | true
 	/dli/task/isaac-sim/isaac-sim.headless.websocket.sh --allow-root
