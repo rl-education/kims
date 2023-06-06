@@ -50,4 +50,4 @@ run-part-2:
 run-websocket:
 # kill running instances of isaac sim
 	kill -9 $(pgrep -f "kit") | true
-	/dli/task/isaac-sim/isaac-sim.headless.websocket.sh --allow-root
+	$(ISAAC_PYTHON) rl_simulation_class/run_websocket.py
