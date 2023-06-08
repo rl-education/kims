@@ -24,13 +24,15 @@ class Episode:
     actions: list[int] = field(default_factory=list)
     log_action_probs: list[Tensor] = field(default_factory=list)
     rewards: list[float] = field(default_factory=list)
+    dones: list[bool] = field(default_factory=list)
 
-    def add(self, state: np.ndarray, action: int, action_log_prob: Tensor, reward: float) -> None:
+    def add(self, state: np.ndarray, action: int, action_log_prob: Tensor, reward: float, done: bool) -> None:
         """Add a transition to the episode."""
         self.states.append(state)
         self.actions.append(action)
         self.log_action_probs.append(action_log_prob)
         self.rewards.append(reward)
+        self.dones.append(done)
 
     def __len__(self) -> int:
         """Return the length of the episode."""
@@ -38,7 +40,7 @@ class Episode:
 
 
 class PolicyNetwork(nn.Module):
-    """Multi layer perceptron network for deciding policy."""
+    """Multi layer perceptron network for deciding gaussian policy."""
 
     def __init__(
         self,
@@ -120,14 +122,11 @@ class REINFORCE:
         """
         for episode_idx in trange(n_episodes):
             episode = self.run_episode()
-            loss = self.update_policy_net_with_normalized_rewards(episode)
-            # loss = self.update_policy_net_with_baseline(episode)
+            loss = self.update_policy_net(episode)
 
             # Log metrics
             self.logger.add_scalar("train/_episode_reward", sum(episode.rewards), episode_idx)
             self.logger.add_scalar("train/_loss", loss, episode_idx)
-            for step in range(len(episode)):
-                self.logger.add_scalar(f"train/entropy-{step}", episode.log_action_probs[step], episode_idx)
 
     def test(self, n_episodes: int = 1, render: bool = False) -> None:
         """Test agent."""
@@ -152,6 +151,7 @@ class REINFORCE:
                 action,
                 action_log_prob,
                 float(reward),
+                done,
             )
             state = next_state
         return episode
@@ -160,7 +160,7 @@ class REINFORCE:
         """Compute the action and log policy probability.
 
         Notes:
-            Compute policy by sampling from the normal distribution.
+            Compute gaussian policy by sampling from the normal distribution.
         """
         state_tensor = torch.FloatTensor(state).to(DEVICE)
         mean, std = self.policy_net(state_tensor)
@@ -179,47 +179,9 @@ class REINFORCE:
         """
         returns = 0.0
         self.optimizer.zero_grad()
-        for step in range(len(episode) - 2, -1, -1):
+        for step in range(len(episode) - 1, -1, -1):
             returns = episode.rewards[step] + self.gamma * returns
             loss = -episode.log_action_probs[step] * returns
-            loss.backward()
-        self.optimizer.step()
-        return loss
-
-    def update_policy_net_with_normalized_rewards(self, episode: Episode) -> torch.Tensor:
-        """Update the policy network.
-
-        Notes:
-            loss = -alpha * G'_t * gradient of ln(pi(a_t | s_t))
-            where G_t is the return from time step t.
-            G'_t = G_t - mean(G_t) / std(G_t)
-        """
-        returns = torch.as_tensor(episode.rewards)
-        for step in range(len(episode) - 2, -1, -1):
-            returns[step] = episode.rewards[step] + self.gamma * returns[step + 1]
-        returns = (returns - returns.mean()) / (returns.std() + 1e-8)
-
-        self.optimizer.zero_grad()
-        for log_prob, discounted_reward in zip(episode.log_action_probs, returns):
-            loss = -log_prob * discounted_reward
-            loss.backward()
-        self.optimizer.step()
-        return loss
-
-    def update_policy_net_with_baseline(self, episode: Episode) -> torch.Tensor:
-        """Update the policy network with baseline.
-
-        Notes:
-            loss = -alpha * (G_t - baseline) * gradient of ln(pi(a_t | s_t))
-            where G_t is the return from time step t.
-            baseline is a constant.
-        """
-        returns = 0.0
-        baseline = 500
-        self.optimizer.zero_grad()
-        for step in range(len(episode) - 2, -1, -1):
-            returns = episode.rewards[step] + self.gamma * returns
-            loss = -episode.log_action_probs[step] * (returns - baseline)
             loss.backward()
         self.optimizer.step()
         return loss
