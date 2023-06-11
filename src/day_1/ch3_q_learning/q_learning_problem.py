@@ -33,7 +33,7 @@ class QLearning:
         # Please write the code that choose the action with highest Q-value
         # at the current state with probability 1 - epsilon
         # and a random action with probability epsilon
-        if None:
+        if np.random.rand() > self.epsilon:
             action = None
         else:
             action = None

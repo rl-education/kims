@@ -46,10 +46,10 @@ def main() -> None:
             env.render()
 
             print(
-                f"state: {state} | "
-                f"action: {action} | "
-                f"reward: {reward} | "
-                f"next_state: {next_state} | "
+                f"\nstate: {state}\n"
+                f"action: {action}\n"
+                f"reward: {reward}\n"
+                f"next_state: {next_state}\n"
                 f"done: {done}\n",
             )
 
