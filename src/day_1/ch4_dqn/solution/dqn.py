@@ -28,7 +28,7 @@ class QNetwork(nn.Module):
 
         self.layers = nn.Sequential(
             ###
-            # Problem 1:
+            # Solution 1:
             # Please write the code that constitutes the layer of the Q-network
             # - Linear transformation (state_dim, 128)
             # - ReLu activation function
@@ -92,7 +92,7 @@ class DQN:
     def select_action(self, state: np.ndarray) -> np.ndarray:
         """Select an action from the set of available actions."""
         ###
-        # Problem 2:
+        # Solution 2:
         # Please write the code that computes the epsilon value using epsilon greedy exploration
         self.epsilon *= self.epsilon_decay
         self.epsilon = max(self.epsilon, 0.01)
@@ -101,7 +101,7 @@ class DQN:
         # Choose the action with highest Q-value at the current state
         if np.random.rand() > self.epsilon:
             ###
-            # Problem 3:
+            # Solution 3:
             # Please write the code that obtains the action using Q-value,
             # which is the output of the current Q-network
             q_value = self.current_model(torch.FloatTensor(state).to(DEVICE))
@@ -129,7 +129,7 @@ class DQN:
         q_value = q_values.gather(1, action).squeeze(1)
 
         ###
-        # Problem 4:
+        # Solution 4:
         # Please write the code to get the target Q-value for Q regression from DQN or Double DQN
         target_q_values = self.target_model(next_state)
         if not self.use_ddqn:
@@ -140,7 +140,7 @@ class DQN:
         ###
 
         ###
-        # Problem 5:
+        # Solution 5:
         # Please write the code that obtains the loss function using TD backup and updates parameters of the current model
         expected_q_value = reward + self.gamma * target_q_value * (1 - done)
         loss = F.mse_loss(input=q_value, target=expected_q_value.detach())

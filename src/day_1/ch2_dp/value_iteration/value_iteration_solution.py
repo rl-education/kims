@@ -24,7 +24,7 @@ def value_iteration(
     while True:
         q_table = np.zeros((state_num, action_num))
         ###
-        # Problem 1:
+        # Solution 1:
         # Please write the code to update the Q-function table by solving the Bellman optimality equation
         for s in dynamics:
             for a in dynamics[s]:
@@ -33,7 +33,7 @@ def value_iteration(
         ###
 
         ###
-        # Problem 2:
+        # Solution 2:
         # Please write the code to update value prime V' from the highest Q-value at the Q-function table
         value_prime = np.max(q_table, axis=1)
         ###

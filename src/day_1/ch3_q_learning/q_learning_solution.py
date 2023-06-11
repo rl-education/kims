@@ -29,7 +29,7 @@ class QLearning:
 
     def select_action(self, state: int) -> np.ndarray:
         ###
-        # Problem 1:
+        # Solution 1:
         # Please write the code that choose the action with highest Q-value
         # at the current state with probability 1 - epsilon
         # and a random action with probability epsilon
@@ -50,7 +50,7 @@ class QLearning:
         # Update the Q-function table using the TD backup
         q_value = self.q_table[state][action]
         ###
-        # Problem 2:
+        # Solution 2:
         # Please write the code to update the Q-function table using the TD backup
         self.q_table[state][action] += self.learning_rate * (
             reward + self.gamma * max(self.q_table[next_state]) - q_value
