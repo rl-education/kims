@@ -119,6 +119,8 @@ class CartpoleTask(MultiEnvRLTask):
         indices = torch.arange(self._cartpoles.count, dtype=torch.int32, device=self._device)
         self._cartpoles.set_joint_efforts(forces, indices=indices)
 
+        self._episodes_count += 1
+
     def get_observations(self) -> dict:
         """Get the observations from the environment.
 
