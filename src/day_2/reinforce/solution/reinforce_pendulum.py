@@ -33,7 +33,7 @@ class Episode:
     """Episode of the environment."""
 
     states: list[np.ndarray] = field(default_factory=list)
-    actions: list[int] = field(default_factory=list)
+    actions: list[float] = field(default_factory=list)
     log_action_probs: list[Tensor] = field(default_factory=list)
     rewards: list[float] = field(default_factory=list)
     dones: list[bool] = field(default_factory=list)
