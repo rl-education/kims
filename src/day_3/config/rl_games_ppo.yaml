@@ -35,8 +35,8 @@ params:
   load_path: "" # path to the checkpoint to load
 
   config:
-    name: Cartpole
-    full_experiment_name: Cartpole
+    name: "multi_cartpole"
+    full_experiment_name: "multi_cartpole"
     env_name: rlgpu
     multi_gpu: False
     ppo: True
@@ -45,15 +45,15 @@ params:
     normalize_value: True
     num_actors: 100
     reward_shaper:
-      scale_value: 0.1
+      scale_value: 1.0
     normalize_advantage: True
     gamma: 0.99
     tau: 0.95
     learning_rate: 3e-4
     lr_schedule: adaptive
     kl_threshold: 0.008
-    score_to_win: 20000
-    max_epochs: 50
+    score_to_win: 990
+    max_epochs: 800
     save_best_after: 50
     save_frequency: 25
     grad_norm: 1.0
@@ -61,7 +61,7 @@ params:
     truncate_grads: True
     e_clip: 0.2
     horizon_length: 16
-    minibatch_size: 10
+    minibatch_size: 8192
     mini_epochs: 8
     critic_coef: 4
     clip_value: True

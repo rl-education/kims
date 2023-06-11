@@ -25,5 +25,5 @@ launch_type: "livestream"
 
 # number of actors
 # changing this might require changing the batch_size in the rlgames config
-# so that num_envs % batch_size = 0
-num_envs: 10
+# so that num_envs * horizon_length % mini_batch_size = 0
+num_envs: 512
