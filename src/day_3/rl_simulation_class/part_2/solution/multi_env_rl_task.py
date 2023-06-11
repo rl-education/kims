@@ -108,14 +108,14 @@ class MultiEnvRLTask(BaseTask, ABC):
         and applies collision filters to disable collisions across environments.
         """
         collision_filter_global_paths = [self._ground_plane_path]
-
         ####### Practice 1: Clone the environment using the GridCloner #######
         # the environments should have the following name pattern: self.default_base_path/env_{i}
-        # there should be self._num_envs environments
-        prim_paths = None  # self._cloner.generate_paths
-        self._env_pos = None  # self._cloner.clone
+        prim_paths = self._cloner.generate_paths(f"{self.default_base_path}/env", self._num_envs)
+        self._env_pos = self._cloner.clone(
+            source_prim_path=f"{self.default_base_path}/env_0",
+            prim_paths=prim_paths,
+        )
         #####################################################################
-
         self._env_pos = torch.tensor(np.array(self._env_pos), device=self._device, dtype=torch.float)
         self._cloner.filter_collisions(
             self._env._world.get_physics_context().prim_path,
