@@ -1,18 +1,35 @@
-"""SAC implementation for Pendulum-v1 environment.
+"""DDPG implementation for Pendulum-v1 environment.
 
 Reference:
     - https://github.com/higgsfield/RL-Adventure-2/blob/master/7.soft%20actor-critic.ipynb
 """
 
 import random
+from dataclasses import dataclass
+from datetime import datetime
+from pathlib import Path
 
 import gym
 import numpy as np
 import torch
 from torch import nn, optim
+from torch.utils.tensorboard import SummaryWriter
+from tqdm import trange
 
 USE_CUDA = torch.cuda.is_available()
 DEVICE = torch.device("cuda" if USE_CUDA else "cpu")
+TENSORBOARD_DIR = Path(__file__).parent.parent / "runs"
+
+
+def set_seed(seed: int = 777):
+    """Set seed for reproducibility."""
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if USE_CUDA:
+        torch.cuda.manual_seed(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
 
 
 class ReplayBuffer:
@@ -103,14 +120,14 @@ class DDPG:
         value_learning_rate: float = 1e-3,
         policy_learning_rate: float = 1e-4,
         replay_buffer_size: int = 1_000_000,
-        max_frames: int = 12_000,
-        max_steps=500,
+        soft_tau: float = 1e-2,
         batch_size: int = 128,
         gamma: float = 0.99,
-        soft_tau: float = 1e-2,
-        epsilon: float = 1e-6,
+        seed: int = 777,
+        log: bool = False,
     ):
         self.env: gym.Env = NormalizedActions(gym.make(env_name))
+        self.env.seed(seed)
 
         state_dim = self.env.observation_space.shape[0]
         num_actions = self.env.action_space.shape[0]
@@ -132,14 +149,15 @@ class DDPG:
             hidden_dim=hidden_dim,
             num_actions=num_actions,
         ).to(DEVICE)
+
         self.target_policy_net = PolicyNetwork(
             state_dim=state_dim,
             hidden_dim=hidden_dim,
             num_actions=num_actions,
         ).to(DEVICE)
 
-        self._copy_network(src_net=self.value_net, target_net=self.target_value_net, soft_tau=soft_tau)
-        self._copy_network(src_net=self.policy_net, target_net=self.target_policy_net, soft_tau=soft_tau)
+        self.soft_target_update(src_net=self.value_net, target_net=self.target_value_net)
+        self.soft_target_update(src_net=self.policy_net, target_net=self.target_policy_net)
 
         self.value_criterion = nn.MSELoss()
 
@@ -148,14 +166,17 @@ class DDPG:
 
         self.replay_buffer = ReplayBuffer(replay_buffer_size)
 
-        self.max_frames = max_frames
-        self.max_steps = max_steps
         self.batch_size = batch_size
         self.gamma = gamma
         self.soft_tau = soft_tau
-        self.epsilon = epsilon
 
-    def _copy_network(
+        self.log = log
+        if self.log:
+            self.logger = SummaryWriter(
+                log_dir=TENSORBOARD_DIR / f"dddg-pendulum-{datetime.now().strftime('%Y%m%d-%H%M%S')}",
+            )
+
+    def soft_target_update(
         self,
         src_net: nn.Module,
         target_net: nn.Module,
@@ -165,49 +186,53 @@ class DDPG:
             data = target_param.data * (1.0 - soft_tau) + param.data * soft_tau
             target_param.data.copy_(data)
 
-    def train(self) -> None:
-        frame_idx = 0
+    def train(self, max_steps: int) -> None:
         rewards = []
 
-        while frame_idx < self.max_frames:
-            state = self.env.reset()
-            episode_reward = 0
+        progress_bar = trange(max_steps)
+        state = self.env.reset()
+        returns = 0
+        episode_idx = 0
+        for step in progress_bar:
+            action = self.select_action(state)
+            next_state, reward, done, _ = self.env.step(action)
 
-            for _ in range(self.max_steps):
-                action = self.get_action(state)
-                next_state, reward, done, _ = self.env.step(action)
+            self.replay_buffer.push(state, action, reward, next_state, done)
+            if len(self.replay_buffer) > self.batch_size:
+                self.ddpg_update()
 
-                self.replay_buffer.push(state, action, reward, next_state, done)
-                if len(self.replay_buffer) > self.batch_size:
-                    self.ddpg_update()
+            state = next_state
+            returns += float(reward)
+            if done:
+                progress_bar.set_description(
+                    f"[TRAIN] Episode {episode_idx} ({step} steps) reward: {returns:.02f}",
+                )
+                state = self.env.reset()
+                returns = 0.0
+                episode_idx += 1
+            step += 1
 
-                state = next_state
-                episode_reward += float(reward)
-                frame_idx += 1
+            rewards.append(returns)
 
-                if done:
-                    break
-            rewards.append(episode_reward)
-            print(episode_reward)
-
-    def test(self, render: bool = False) -> float:
+    def test(self, n_episodes: int, render: bool = False) -> None:
         """."""
         state = self.env.reset()
-        total_reward = 0.0
-        for _ in range(self.max_steps):
-            if render:
-                self.env.render(mode="human")
-            action = self.get_action(state=state)
-            next_state, reward, done, _ = self.env.step(action)
-            state = next_state
-            total_reward += float(reward)
+        returns = 0.0
+        done = False
+        for episode_idx in range(n_episodes):
+            while not done:
+                if render:
+                    self.env.render(mode="human")
 
-            if done:
-                break
+                action = self.select_action(state=state)
+                next_state, reward, done, _ = self.env.step(action)
+                state = next_state
+                returns += float(reward)
+            if self.log:
+                self.logger.add_scalar("reward", returns, episode_idx)
+            print(f"[TEST] Episode {episode_idx} reward: {returns}")
 
-        return total_reward
-
-    def get_action(self, state: np.ndarray) -> np.ndarray:
+    def select_action(self, state: np.ndarray) -> np.ndarray:
         """Get action."""
         state_tensor = torch.FloatTensor(state).unsqueeze(0).to(DEVICE)
         action = self.policy_net(state_tensor)
@@ -243,11 +268,21 @@ class DDPG:
         value_loss.backward()
         self.value_optimizer.step()
 
-        self._copy_network(src_net=self.value_net, target_net=self.target_value_net, soft_tau=self.soft_tau)
-        self._copy_network(src_net=self.policy_net, target_net=self.target_policy_net, soft_tau=self.soft_tau)
+        self.soft_target_update(
+            src_net=self.value_net,
+            target_net=self.target_value_net,
+            soft_tau=self.soft_tau,
+        )
+        self.soft_target_update(
+            src_net=self.policy_net,
+            target_net=self.target_policy_net,
+            soft_tau=self.soft_tau,
+        )
 
 
 if __name__ == "__main__":
-    ddpg = DDPG(env_name="Pendulum-v1")
-    ddpg.train()
-    print(ddpg.test(render=True))
+    SEED = 777
+    set_seed(SEED)
+    ddpg = DDPG(env_name="Pendulum-v1", log=False)
+    ddpg.train(max_steps=12_000)
+    ddpg.test(n_episodes=1, render=True)
