@@ -73,7 +73,8 @@ class PolicyNetwork(nn.Module):
     def forward(self, x: Tensor) -> Tensor:
         """Forward."""
         policy = self.layers(x)
-        return policy
+        logits = nn.functional.log_softmax(policy, dim=-1)
+        return logits
 
 
 class REINFORCE:
@@ -142,7 +143,7 @@ class REINFORCE:
             if render:
                 self.env.render(mode="human")
 
-            action, action_log_prob = self.get_action(state)
+            action, action_log_prob = self.select_action(state)
             next_state, reward, done, _ = self.env.step(action)
             episode.add(
                 state,
@@ -154,7 +155,7 @@ class REINFORCE:
             state = next_state
         return episode
 
-    def get_action(self, state: np.ndarray) -> tuple[int, Tensor]:
+    def select_action(self, state: np.ndarray) -> tuple[int, Tensor]:
         """Compute the action and log policy probability.
 
         Notes:
@@ -162,7 +163,6 @@ class REINFORCE:
         """
         state_tensor = torch.FloatTensor(state).to(DEVICE)
         policy = self.policy_net(state_tensor)
-        logits = nn.functional.log_softmax(policy, dim=-1)
 
         action_distribution = torch.distributions.Categorical(logits=logits)
         action = action_distribution.sample()
