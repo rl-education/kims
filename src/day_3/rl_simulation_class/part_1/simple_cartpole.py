@@ -68,6 +68,16 @@ class CartpoleTask(SimpleRLTask):
         # add Cartpole ArticulationView to the Scene
         scene.add(self._cartpoles)
 
+    def cleanup(self) -> None:
+        """Called before calling a reset() on the world. Reset data structures."""
+        self._observations_buffer = torch.zeros(
+            (1, self.num_observations),
+            device=self._device,
+            dtype=torch.float,
+        )
+        self._done_buffer = torch.ones(1, device=self._device, dtype=torch.long)
+        self._episodes_count = torch.zeros(1, device=self._device, dtype=torch.long)
+
     def reset(self) -> None:
         """The reset function is called by the VecEnvBase class to reset the environment."""
         # set all environments to done
