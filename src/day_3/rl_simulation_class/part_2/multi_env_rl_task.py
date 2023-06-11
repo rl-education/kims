@@ -70,10 +70,11 @@ class MultiEnvRLTask(BaseTask, ABC):
         self._env_spacing = self._config.task_config.task.env_spacing
 
         ####### Practice 1: Create a GridCloner object #######
+        # the GridCloner was already imported for you
         # the environments should be spaced out by self._env_spacing
         # the base environment path is stored in self.default_base_path
-        self._cloner = GridCloner(spacing=self._env_spacing)
-        self._cloner.define_base_env(self.default_base_path)
+        self._cloner = None
+        # define the base path
         ######################################################
         define_prim(f"{self.default_base_path}/env_0")
 
