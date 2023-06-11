@@ -60,11 +60,9 @@ class PolicyNetwork(nn.Module):
         state_dim: int,
         hidden_dim: int,
         action_dim: int,
-        log_std_range: tuple[int, int] = (-20, 2),
     ):
         super().__init__()
 
-        self.log_std_min, self.log_std_max = log_std_range
         self.layers = nn.Sequential(
             nn.Linear(state_dim, hidden_dim),
             nn.ReLU(),

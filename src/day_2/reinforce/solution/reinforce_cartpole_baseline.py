@@ -59,11 +59,9 @@ class PolicyNetwork(nn.Module):
         state_dim: int,
         hidden_dim: int,
         action_dim: int,
-        log_std_range: tuple[int, int] = (-20, 2),
     ):
         super().__init__()
 
-        self.log_std_min, self.log_std_max = log_std_range
         self.layers = nn.Sequential(
             nn.Linear(state_dim, hidden_dim),
             nn.ReLU(),
@@ -72,7 +70,7 @@ class PolicyNetwork(nn.Module):
             nn.Linear(hidden_dim, action_dim),
         )
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, x: Tensor) -> tuple[Tensor, Tensor]:
         """Forward."""
         policy = self.layers(x)
         logits = nn.functional.log_softmax(policy, dim=-1)
@@ -256,6 +254,8 @@ class REINFORCE:
 
 
 if __name__ == "__main__":
-    reinforce = REINFORCE(env_name="CartPole-v1", log=False, batch_size=4)
+    SEED = 777
+    set_seed(SEED)
+    reinforce = REINFORCE(env_name="CartPole-v1", log=False, batch_size=4, seed=SEED)
     reinforce.train(n_episodes=500)
     reinforce.test(n_episodes=1, render=True)
