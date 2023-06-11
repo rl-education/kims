@@ -82,6 +82,9 @@ class CartpoleTask(SimpleRLTask):
         """The reset function is called by the VecEnvBase class to reset the environment."""
         # set all environments to done
         self._done_buffer = torch.ones_like(self._done_buffer)
+        reset_env_ids = self._done_buffer.nonzero(as_tuple=False).squeeze(-1)
+        if len(reset_env_ids) > 0:
+            self.reset_idx(reset_env_ids)
 
     def pre_physics_step(self, actions: np.ndarray) -> None:
         """This function is called before the physics step is executed.
@@ -91,11 +94,6 @@ class CartpoleTask(SimpleRLTask):
         """
         if not self._env._world.is_playing():
             return
-
-        # check if any environment is done
-        reset_env_ids = self._done_buffer.nonzero(as_tuple=False).squeeze(-1)
-        if len(reset_env_ids) > 0:
-            self.reset_idx(reset_env_ids)
 
         # generate joint efforts from actions
         actions = torch.tensor(actions)
