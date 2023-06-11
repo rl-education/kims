@@ -69,9 +69,7 @@ class MultiEnvRLTask(BaseTask, ABC):
         self._num_envs = self._config.task_config.task.num_envs
         self._env_spacing = self._config.task_config.task.env_spacing
 
-        ####### Practice 1: Create a GridCloner object #######
-        # the environments should be spaced out by self._env_spacing
-        # the base environment path is stored in self.default_base_path
+        ####### Solution 1: Create a GridCloner object #######
         self._cloner = GridCloner(spacing=self._env_spacing)
         self._cloner.define_base_env(self.default_base_path)
         ######################################################
@@ -108,8 +106,7 @@ class MultiEnvRLTask(BaseTask, ABC):
         and applies collision filters to disable collisions across environments.
         """
         collision_filter_global_paths = [self._ground_plane_path]
-        ####### Practice 1: Clone the environment using the GridCloner #######
-        # the environments should have the following name pattern: self.default_base_path/env_{i}
+        ####### Solution 1: Clone the environment using the GridCloner #######
         prim_paths = self._cloner.generate_paths(f"{self.default_base_path}/env", self._num_envs)
         self._env_pos = self._cloner.clone(
             source_prim_path=f"{self.default_base_path}/env_0",
