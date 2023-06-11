@@ -54,22 +54,29 @@ class PolicyNetwork(nn.Module):
         state_dim: int,
         hidden_dim: int,
         action_dim: int,
+        log_std_range: tuple[int, int] = (-5, 2),
     ):
         super().__init__()
 
+        self.log_std_min, self.log_std_max = log_std_range
         self.layers = nn.Sequential(
             nn.Linear(state_dim, hidden_dim),
             nn.ReLU(),
             nn.Linear(hidden_dim, hidden_dim),
             nn.ReLU(),
-            nn.Linear(hidden_dim, action_dim),
         )
 
-    def forward(self, x: Tensor) -> Tensor:
+        self.mean_linear = nn.Linear(hidden_dim, action_dim)
+        self.log_std_linear = nn.Sequential(nn.Linear(hidden_dim, action_dim))
+
+    def forward(self, x: Tensor) -> tuple[Tensor, Tensor]:
         """Forward."""
-        policy = self.layers(x)
-        logits = nn.functional.log_softmax(policy, dim=-1)
-        return logits
+        intermediate = self.layers(x)
+
+        mean = self.mean_linear(intermediate)
+        log_std = self.mean_linear(intermediate)
+        log_std = torch.clamp(log_std, self.log_std_min, self.log_std_max)
+        return mean, log_std.exp()
 
 
 class ValueNetwork(nn.Module):
@@ -97,18 +104,18 @@ class ActorCritic:
     def __init__(
         self,
         env_name: str,
-        hidden_dim: int = 128,
+        hidden_dim: int = 256,
         gamma: float = 0.99,
         learning_rate: float = 0.001,
         log: bool = False,
         batch_size: int = 2,
         seed: int = 777,
     ):
-        self.env = gym.make(env_name)
+        self.env = gym.wrappers.RescaleAction(gym.make(env_name), min_action=-1.0, max_action=1.0)
         self.env.seed(seed)
 
         state_dim = self.env.observation_space.shape[0]
-        action_dim = self.env.action_space.n
+        action_dim = self.env.action_space.shape[0]
 
         self.policy_net = PolicyNetwork(
             state_dim=state_dim,
@@ -130,7 +137,7 @@ class ActorCritic:
         if self.log:
             self.logger = SummaryWriter(
                 log_dir=TENSORBOARD_DIR
-                / f"actor_critic-cartpole-{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+                / f"actor_critic-pendulum-{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
             )
 
     def train(self, max_steps: int) -> None:
@@ -231,12 +238,13 @@ class ActorCritic:
             Compute policy by sampling from the normal distribution.
         """
         state_tensor = torch.FloatTensor(state).to(DEVICE)
-        logits = self.policy_net(state_tensor)
+        mean, std = self.policy_net(state_tensor)
 
-        action_distribution = torch.distributions.Categorical(logits=logits)
-        action = action_distribution.sample()
-        log_action_prob = action_distribution.log_prob(action)
-        return action.numpy(), log_action_prob
+        action_distribution = torch.distributions.Normal(mean, std)
+        raw_action = action_distribution.sample()
+        log_action_prob = action_distribution.log_prob(raw_action)
+        action = torch.tanh(raw_action).detach().cpu().numpy()
+        return action, log_action_prob
 
     def update_network(self, transition: Transition) -> Tensor:
         """Update the policy and value networks."""
@@ -282,6 +290,6 @@ class ActorCritic:
 
 if __name__ == "__main__":
     set_seed(777)
-    reinforce = ActorCritic(env_name="CartPole-v1", log=True, seed=777, batch_size=4)
-    reinforce.train(max_steps=100_000)
+    reinforce = ActorCritic(env_name="Pendulum-v1", log=False, seed=777, batch_size=512)
+    reinforce.train(max_steps=500_000)
     reinforce.test(n_episodes=3, render=True)
