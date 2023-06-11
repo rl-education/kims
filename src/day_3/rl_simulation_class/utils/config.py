@@ -69,6 +69,7 @@ class SB3Config:
 class Config:
     """Configuration for the RL simulation class."""
 
+    name: str
     task_config_file: str
     policy_config_file: str
     config_path: str = ""
@@ -94,6 +95,7 @@ def load_config(config_path: str, config_file_name: str) -> Config:
     config.task_config = load_task_config(config_path, config)
     if isinstance(config.task_config, CartpoleConfig):
         config.task_config.task.num_envs = config.num_envs
+        config.task_config.name = config.name
     config.policy_config = load_policy_config(config_path, config)
     if isinstance(config.policy_config, RLGamesConfig) and "config" in config.policy_config.params:
         config.policy_config.params["config"]["device"] = config.device

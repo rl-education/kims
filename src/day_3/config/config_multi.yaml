@@ -1,3 +1,6 @@
+# name of the experiment
+name: "multi_cartpole"
+
 # Task config file
 task_config_file: "cartpole.yaml"
 
@@ -21,4 +24,6 @@ checkpoint: ""
 launch_type: "livestream"
 
 # number of actors
+# changing this might require changing the batch_size in the rlgames config
+# so that num_envs % batch_size = 0
 num_envs: 10

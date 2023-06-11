@@ -1,3 +1,6 @@
+# name of the experiment
+name: "single_cartpole"
+
 # Task config file
 task_config_file: "cartpole.yaml"
 
@@ -18,5 +21,5 @@ checkpoint: ""
 # livestream: streams the GUI to the Omniverse Streaming Client
 # websocket: streams the GUI to http://<server_IP>:8211/streaming/client
 launch_type: "livestream"
-# number of actors
+# number of actors (don't change this for this config)
 num_envs: 1
