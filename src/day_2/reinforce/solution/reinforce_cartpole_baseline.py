@@ -108,9 +108,11 @@ class REINFORCE:
         gamma: float = 0.99,
         learning_rate: float = 0.001,
         batch_size: int = 2,
+        seed: int = 777,
         log: bool = True,
     ):
         self.env = gym.make(env_name)
+        self.env.seed = seed
 
         state_dim = self.env.observation_space.shape[0]
         action_dim = self.env.action_space.n
@@ -148,7 +150,6 @@ class REINFORCE:
         for episode_idx in progress_bar:
             episodes = [self.run_episode() for _ in range(self.batch_size)]
             batch = self.make_batch(episodes)
-            loss = self.update_batch(batch)
 
             # Log metrics
             returns = sum(batch.rewards) / self.batch_size
