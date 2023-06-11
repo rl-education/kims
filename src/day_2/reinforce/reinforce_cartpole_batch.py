@@ -1,5 +1,6 @@
-"""REINFORCE Trainer."""
+"""REINFORCE Batch Trainer."""
 
+import random
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -7,6 +8,7 @@ from pathlib import Path
 import gym
 import numpy as np
 import torch
+from gym.wrappers import RescaleAction
 from torch import Tensor, nn, optim
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import trange
@@ -14,6 +16,17 @@ from tqdm import trange
 USE_CUDA = torch.cuda.is_available()
 DEVICE = torch.device("cuda" if USE_CUDA else "cpu")
 TENSORBOARD_DIR = Path(__file__).parent.parent.parent / "runs"
+
+
+def set_seed(seed: int = 777):
+    """Set seed for reproducibility."""
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if USE_CUDA:
+        torch.cuda.manual_seed(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
 
 
 @dataclass
@@ -47,43 +60,22 @@ class PolicyNetwork(nn.Module):
         state_dim: int,
         hidden_dim: int,
         action_dim: int,
-        log_std_range: tuple[int, int] = (-20, 2),
     ):
         super().__init__()
 
-        self.log_std_min, self.log_std_max = log_std_range
         self.layers = nn.Sequential(
             nn.Linear(state_dim, hidden_dim),
             nn.ReLU(),
             nn.Linear(hidden_dim, hidden_dim),
             nn.ReLU(),
-        )
-
-        self.mean_linear = nn.Linear(hidden_dim, action_dim)
-        self.log_std_linear = nn.Sequential(
             nn.Linear(hidden_dim, action_dim),
-            nn.Tanh(),
         )
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, x: Tensor) -> Tensor:
         """Forward."""
-        intermediate = self.layers(x)
-
-        mean = self.mean_linear(intermediate)
-        log_std = self.mean_linear(intermediate)
-        log_std = torch.clamp(log_std, self.log_std_min, self.log_std_max)
-        return mean, log_std.exp()
-
-
-class NormalizedActions(gym.ActionWrapper):
-    def action(self, action: np.ndarray):
-        low = self.action_space.low
-        high = self.action_space.high
-
-        action = low + (action + 1.0) * 0.5 * (high - low)
-        action = np.clip(action, low, high)
-
-        return action
+        policy = self.layers(x)
+        logits = nn.functional.log_softmax(policy, dim=-1)
+        return logits
 
 
 class REINFORCE:
@@ -92,15 +84,20 @@ class REINFORCE:
     def __init__(
         self,
         env_name: str,
-        hidden_dim: int = 256,
+        hidden_dim: int = 128,
         gamma: float = 0.99,
         learning_rate: float = 0.001,
-        tensorboard: bool = True,
+        log: bool = True,
+        batch_size: int = 2,
+        seed: int = 777,
     ):
-        self.env = NormalizedActions(gym.make(env_name))
+        # Normalize action space
+        self.env = gym.make(env_name)
+        self.env.seed(seed)
+        self.batch_size = batch_size
 
         state_dim = self.env.observation_space.shape[0]
-        action_dim = self.env.action_space.shape[0]
+        action_dim = self.env.action_space.n
 
         self.policy_net = PolicyNetwork(
             state_dim=state_dim,
@@ -111,10 +108,11 @@ class REINFORCE:
         self.gamma = gamma
         self.optimizer = optim.Adam(self.policy_net.parameters(), lr=learning_rate)
 
-        self.tensorboard = tensorboard
-        if self.tensorboard:
+        self.log = log
+        if self.log:
             self.logger = SummaryWriter(
-                log_dir=TENSORBOARD_DIR / f"reinforce-{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+                log_dir=TENSORBOARD_DIR
+                / f"reinforce-cartpole-batch-{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
             )
 
     def train(self, n_episodes: int) -> None:
@@ -125,18 +123,26 @@ class REINFORCE:
         """
         progress_bar = trange(n_episodes)
         for episode_idx in progress_bar:
-            episodes = [self.run_episode() for _ in range(5)]
-            episode = self.make_batch(episodes)
-            loss = self.update_policy_net_batch(episode)
+            episodes = [self.run_episode() for _ in range(self.batch_size)]
+            batch = self.make_batch(episodes)
+            self.update_policy_net(batch)
 
             # Log metrics
-            returns = sum(episode.rewards) / 5.0
-            if self.tensorboard:
+            return_per_episode = [sum(episode.rewards) for episode in episodes]
+            returns = np.mean(return_per_episode)
+            if self.log:
                 self.logger.add_scalar("train/_episode_reward", returns, episode_idx)
-                self.logger.add_scalar("train/_loss", loss, episode_idx)
             progress_bar.set_description(
-                f"Episode {episode_idx}: Reward {int(returns):02d} Loss {loss.item():.2f}",
+                f"Episode {episode_idx}: Reward {returns:02f}",
             )
+
+    def test(self, n_episodes: int = 1, render: bool = False) -> None:
+        """Test agent."""
+        for episode_idx in range(n_episodes):
+            episode = self.run_episode(render=render)
+            if self.log:
+                self.logger.add_scalar("test/episode_reward", sum(episode.rewards), episode_idx)
+            print(f"[TEST] Episode {episode_idx} reward: {sum(episode.rewards)}")
 
     def make_batch(self, episodes: list[Episode]) -> Episode:
         """Make batch of episodes."""
@@ -149,14 +155,6 @@ class REINFORCE:
             batch.dones.extend(episode.dones)
         return batch
 
-    def test(self, n_episodes: int = 1, render: bool = False) -> None:
-        """Test agent."""
-        for episode_idx in range(n_episodes):
-            episode = self.run_episode(render=render)
-            if self.tensorboard:
-                self.logger.add_scalar("test/episode_reward", sum(episode.rewards), episode_idx)
-            print(f"[TEST] Episode {episode_idx} reward: {sum(episode.rewards)}")
-
     def run_episode(self, render: bool = False) -> Episode:
         """Run one episode of the environment."""
         episode = Episode()
@@ -166,68 +164,47 @@ class REINFORCE:
             if render:
                 self.env.render(mode="human")
 
-            action, action_log_prob = self.get_action(state)
+            action, action_log_prob = self.select_action(state)
             next_state, reward, done, _ = self.env.step(action)
+
             episode.add(
                 state,
                 action,
                 action_log_prob,
-                float(reward),
+                reward,
                 done,
             )
             state = next_state
         return episode
 
-    def get_action(self, state: np.ndarray) -> tuple[int, Tensor]:
+    def select_action(self, state: np.ndarray) -> tuple[int, Tensor]:
         """Compute the action and log policy probability.
 
         Notes:
             Compute policy by sampling from the normal distribution.
         """
         state_tensor = torch.FloatTensor(state).to(DEVICE)
-        mean, std = self.policy_net(state_tensor)
+        logits = self.policy_net(state_tensor)
 
-        normal = torch.distributions.Normal(mean, std)
-        z = normal.sample()
-        action = torch.tanh(z)
-        return action.numpy(), normal.log_prob(z)
+        action_distribution = torch.distributions.Categorical(logits=logits)
+        action = action_distribution.sample()
+        return action.numpy(), action_distribution.log_prob(action)
 
-    def update_policy_net(self, episode: Episode) -> torch.Tensor:
-        """Update the policy network.
+    def update_policy_net(self, batch: Episode) -> torch.Tensor:
+        """Update the policy network by batch of episodes.
 
         Notes:
             loss = -alpha * G_t * gradient of ln(pi(a_t | s_t))
             where G_t is the return from time step t.
         """
-        returns = 0.0
         self.optimizer.zero_grad()
-        for step in range(len(episode) - 1, -1, -1):
-            returns = episode.rewards[step] + self.gamma * returns * (1 - episode.dones[step])
-            loss = -episode.log_action_probs[step] * returns
-            loss.backward()
+        # TODO 1: Compute the REINFORCE batch loss
         self.optimizer.step()
-        return loss
-
-    def update_policy_net_with_baseline(self, episode: Episode) -> torch.Tensor:
-        """Update the policy network with baseline.
-
-        Notes:
-            loss = -alpha * (G_t - baseline) * gradient of ln(pi(a_t | s_t))
-            where G_t is the return from time step t.
-            baseline is a constant.
-        """
-        returns = 0.0
-        baseline = 500
-        self.optimizer.zero_grad()
-        for step in range(len(episode) - 2, -1, -1):
-            returns = episode.rewards[step] + self.gamma * returns * (1 - episode.dones[step])
-            loss = -episode.log_action_probs[step] * (returns - baseline)
-            loss.backward()
-        self.optimizer.step()
-        return loss
 
 
 if __name__ == "__main__":
-    reinforce = REINFORCE(env_name="Pendulum-v1")
-    reinforce.train(n_episodes=3000)
-    reinforce.test(n_episodes=10, render=True)
+    SEED = 777
+    set_seed(SEED)
+    reinforce = REINFORCE(env_name="CartPole-v1", log=True, seed=SEED, batch_size=4)
+    reinforce.train(n_episodes=500)
+    reinforce.test(n_episodes=1, render=True)

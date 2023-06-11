@@ -1,5 +1,6 @@
 """REINFORCE Trainer."""
 
+import random
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -13,7 +14,18 @@ from tqdm import trange
 
 USE_CUDA = torch.cuda.is_available()
 DEVICE = torch.device("cuda" if USE_CUDA else "cpu")
-TENSORBOARD_DIR = Path(__file__).parent.parent / "runs"
+TENSORBOARD_DIR = Path(__file__).parent.parent.parent / "runs"
+
+
+def set_seed(seed: int = 777):
+    """Set seed for reproducibility."""
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if USE_CUDA:
+        torch.cuda.manual_seed(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
 
 
 @dataclass
@@ -24,13 +36,15 @@ class Episode:
     actions: list[int] = field(default_factory=list)
     log_action_probs: list[Tensor] = field(default_factory=list)
     rewards: list[float] = field(default_factory=list)
+    dones: list[bool] = field(default_factory=list)
 
-    def add(self, state: np.ndarray, action: int, action_log_prob: Tensor, reward: float) -> None:
+    def add(self, state: np.ndarray, action: int, action_log_prob: Tensor, reward: float, done: bool) -> None:
         """Add a transition to the episode."""
         self.states.append(state)
         self.actions.append(action)
         self.log_action_probs.append(action_log_prob)
         self.rewards.append(reward)
+        self.dones.append(done)
 
     def __len__(self) -> int:
         """Return the length of the episode."""
@@ -38,66 +52,47 @@ class Episode:
 
 
 class PolicyNetwork(nn.Module):
-    """Multi layer perceptron network for deciding policy."""
+    """Multi layer perceptron network for deciding gaussian policy."""
 
     def __init__(
         self,
         state_dim: int,
         hidden_dim: int,
         action_dim: int,
-        log_std_range: tuple[int, int] = (-20, 2),
     ):
         super().__init__()
 
-        self.log_std_min, self.log_std_max = log_std_range
         self.layers = nn.Sequential(
             nn.Linear(state_dim, hidden_dim),
             nn.ReLU(),
             nn.Linear(hidden_dim, hidden_dim),
             nn.ReLU(),
-        )
-
-        self.mean_linear = nn.Linear(hidden_dim, action_dim)
-        self.log_std_linear = nn.Sequential(
             nn.Linear(hidden_dim, action_dim),
-            nn.Tanh(),
         )
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, x: Tensor) -> Tensor:
         """Forward."""
-        intermediate = self.layers(x)
-
-        mean = self.mean_linear(intermediate)
-        log_std = self.mean_linear(intermediate)
-        log_std = torch.clamp(log_std, self.log_std_min, self.log_std_max)
-        return mean, log_std.exp()
-
-
-class NormalizedActions(gym.ActionWrapper):
-    def action(self, action: np.ndarray):
-        low = self.action_space.low
-        high = self.action_space.high
-
-        action = low + (action + 1.0) * 0.5 * (high - low)
-        action = np.clip(action, low, high)
-
-        return action
+        # TODO 1: Implement logits
+        return logits
 
 
 class REINFORCE:
-    """REINFORCE Trainer."""
+    """REINFORCE Discrete Trainer."""
 
     def __init__(
         self,
-        env_name: str,
+        env_name: str = "CartPole-v1",
         hidden_dim: int = 128,
         gamma: float = 0.99,
         learning_rate: float = 0.001,
+        seed: int = 777,
+        log: bool = False,
     ):
-        self.env = NormalizedActions(gym.make(env_name))
+        self.env = gym.make(env_name)
+        self.env.seed(seed)
 
         state_dim = self.env.observation_space.shape[0]
-        action_dim = self.env.action_space.shape[0]
+        action_dim = self.env.action_space.n
 
         self.policy_net = PolicyNetwork(
             state_dim=state_dim,
@@ -108,9 +103,12 @@ class REINFORCE:
         self.gamma = gamma
         self.optimizer = optim.Adam(self.policy_net.parameters(), lr=learning_rate)
 
-        self.logger = SummaryWriter(
-            log_dir=TENSORBOARD_DIR / f"reinforce-{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
-        )
+        self.log = log
+        if self.log:
+            self.logger = SummaryWriter(
+                log_dir=TENSORBOARD_DIR
+                / f"reinforce-cartpole-{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+            )
 
     def train(self, n_episodes: int) -> None:
         """Train agent.
@@ -118,15 +116,15 @@ class REINFORCE:
         Args:
             n_episodes (int): Number of episodes to train for.
         """
-        for episode_idx in trange(n_episodes):
+        progress_bar = trange(n_episodes)
+        for episode_idx in progress_bar:
             episode = self.run_episode()
-            loss = self.update_policy_net(episode)
+            self.update_policy_net(episode)
 
             # Log metrics
-            self.logger.add_scalar("train/_episode_reward", sum(episode.rewards), episode_idx)
-            self.logger.add_scalar("train/_loss", loss, episode_idx)
-            for step in range(len(episode)):
-                self.logger.add_scalar(f"train/entropy-{step}", episode.log_action_probs[step], episode_idx)
+            progress_bar.set_description(f"Episode {episode_idx} reward: {sum(episode.rewards)}")
+            if self.log:
+                self.logger.add_scalar("train/_episode_reward", sum(episode.rewards), episode_idx)
 
     def test(self, n_episodes: int = 1, render: bool = False) -> None:
         """Test agent."""
@@ -143,64 +141,45 @@ class REINFORCE:
         while not done:
             if render:
                 self.env.render(mode="human")
-            action, action_log_prob = self.get_action(state)
 
-            # action is in [-1, 1] but the environment expects actions in [-2, 2]
-            next_state, reward, done, _ = self.env.step(action * 2)
+            action, action_log_prob = self.select_action(state)
+            next_state, reward, done, _ = self.env.step(action)
             episode.add(
                 state,
                 action,
                 action_log_prob,
                 float(reward),
+                done,
             )
             state = next_state
         return episode
 
-    def get_action(self, state: np.ndarray) -> tuple[int, Tensor]:
+    def select_action(self, state: np.ndarray) -> tuple[int, Tensor]:
         """Compute the action and log policy probability.
 
         Notes:
-            Compute policy by sampling from the normal distribution.
+            Compute gaussian policy by sampling from the normal distribution.
         """
         state_tensor = torch.FloatTensor(state).to(DEVICE)
-        mean, std = self.policy_net(state_tensor)
+        # TODO 2: Compute the action and action log probability
+        # Sample action from softmax of logits
+        return action, action_log_prob
 
-        normal = torch.distributions.Normal(mean, std)
-        z = normal.sample()
-        action = torch.tanh(z)
-        return action.numpy(), normal.log_prob(z)
-
-    def update_policy_net(self, episode: Episode) -> torch.Tensor:
+    def update_policy_net(self, episode: Episode) -> None:
         """Update the policy network.
 
         Notes:
             loss = -alpha * G_t * gradient of ln(pi(a_t | s_t))
             where G_t is the return from time step t.
         """
-        raise NotImplementedError
-
-    def update_policy_net_with_normalized_rewards(self, episode: Episode) -> torch.Tensor:
-        """Update the policy network.
-
-        Notes:
-            loss = -alpha * G'_t * gradient of ln(pi(a_t | s_t))
-            where G_t is the return from time step t.
-            G'_t = G_t - mean(G_t) / std(G_t)
-        """
-        raise NotImplementedError
-
-    def update_policy_net_with_baseline(self, episode: Episode) -> torch.Tensor:
-        """Update the policy network with baseline.
-
-        Notes:
-            loss = -alpha * (G_t - baseline) * gradient of ln(pi(a_t | s_t))
-            where G_t is the return from time step t.
-            baseline is a constant.
-        """
-        raise NotImplementedError
+        self.optimizer.zero_grad()
+        # TODO 3: Compute the REINFORCE loss
+        self.optimizer.step()
 
 
 if __name__ == "__main__":
-    reinforce = REINFORCE(env_name="Pendulum-v1")
-    reinforce.train(n_episodes=1000)
-    reinforce.test(n_episodes=10, render=True)
+    SEED = 777
+    set_seed(SEED)
+    reinforce = REINFORCE(env_name="CartPole-v1", log=True, seed=SEED)
+    reinforce.train(n_episodes=3000)
+    reinforce.test(n_episodes=1, render=True)
