@@ -29,11 +29,12 @@ class CartpoleTask(SimpleRLTask):
         self._num_actions = 1
         self._action_space = spaces.Box(np.ones(self._num_actions) * -1.0, np.ones(self._num_actions) * 1.0)
 
-        ######## Practice 1: Set the observation space to match the observation you chose ########
-        # Remember that the observation space should be derived from gym.Space
-        # (choose the one that fits your observation)
-        self._num_observations = None
-        self._observation_space = None
+        ######## Solution 1: Set the observation space to match the observation you chose ########
+        self._num_observations = 4
+        self._observation_space = spaces.Box(
+            np.ones(self._num_observations) * -np.Inf,
+            np.ones(self._num_observations) * np.Inf,
+        )
         #########################################################################################
 
         self._cart_dof_idx = 0
@@ -130,12 +131,15 @@ class CartpoleTask(SimpleRLTask):
         pole_pos = dof_pos[:, self._pole_dof_idx]
         pole_vel = dof_vel[:, self._pole_dof_idx]
 
-        ######## Practice 1: Fill the observations buffer with the observations you chose ########
-        self._observations_buffer = None
+        ######## Solution 1: Fill the observations buffer with the observations you chose ########
+        self._observations_buffer[:, 0] = cart_pos
+        self._observations_buffer[:, 1] = cart_vel
+        self._observations_buffer[:, 2] = pole_pos
+        self._observations_buffer[:, 3] = pole_vel
         ##########################################################################################
 
-        ######## Practice 4: Return the right type based on SB3 documentation ########
-        return None
+        ######## Solution 4: Return the right type based on SB3 documentation ########
+        return self._observations_buffer.cpu()
         ##############################################################################
 
     def reset_idx(self, env_ids: torch.Tensor) -> None:
@@ -191,14 +195,17 @@ class CartpoleTask(SimpleRLTask):
         pole_angle = self._observations_buffer[:, 2]
         pole_vel = self._observations_buffer[:, 3]
 
-        ######## Practice 2: Calculate the reward ########
-        # The maximum allowed cart position is in the self._reset_dist variable
-        # torch.where can be helpful here (https://pytorch.org/docs/stable/generated/torch.where.html)
-        reward = None
+        ######## Solution 2: Calculate the reward ########
+        # compute reward based on angle of pole and cart velocity
+        reward = 1.0 - pole_angle * pole_angle - 0.01 * torch.abs(cart_vel) - 0.005 * torch.abs(pole_vel)
+        # apply a penalty if cart is too far from center
+        reward = torch.where(torch.abs(cart_pos) > self._reset_dist, torch.ones_like(reward) * -2.0, reward)
+        # apply a penalty if pole is too far from upright
+        reward = torch.where(torch.abs(pole_angle) > np.pi / 2, torch.ones_like(reward) * -2.0, reward)
         ##################################################
 
-        ######## Practice 4: Return the right type based on SB3 documentation ########
-        return None
+        ######## Solution 4: Return the right type based on SB3 documentation ########
+        return reward.item()
         ##############################################################################
 
     def is_done(self) -> bool:
@@ -210,13 +217,13 @@ class CartpoleTask(SimpleRLTask):
         cart_pos = self._observations_buffer[:, 0]
         pole_pos = self._observations_buffer[:, 2]
 
-        ######## Practice 3: Calculate the done flag and store it in the done buffer ########
-        # The maximum allowed cart position is in the self._reset_dist variable
-        # The maximum allowed episode length is in the self._max_episode_length variable
-        # torch.where can be helpful here (https://pytorch.org/docs/stable/generated/torch.where.html)
-        self._done_buffer = None
+        ######## Solution 3: Calculate the done flag and store it in the done buffer ########
+        resets = torch.where(torch.abs(cart_pos) > self._reset_dist, 1, 0)
+        resets = torch.where(torch.abs(pole_pos) > math.pi / 2, 1, resets)
+        resets = torch.where(self._episodes_count >= self._max_episode_length, 1, resets)
+        self._done_buffer[:] = resets
         #####################################################################################
 
-        ######## Practice 4: Return the right type based on SB3 documentation ########
-        return None
+        ######## Solution 4: Return the right type based on SB3 documentation ########
+        return self._done_buffer.item()
         ##############################################################################
