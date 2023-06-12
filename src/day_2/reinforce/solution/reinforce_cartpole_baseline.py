@@ -135,7 +135,7 @@ class REINFORCE:
         if self.log:
             self.logger = SummaryWriter(
                 log_dir=TENSORBOARD_DIR
-                / f"reinforce-cartpole-baseline-{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+                / f"reinforce-cartpole-baseline-{datetime.now().strftime('%Y-%m-%d %H-%M-%S')}",
             )
 
     def train(self, n_episodes: int) -> None:

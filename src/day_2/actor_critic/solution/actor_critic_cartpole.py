@@ -130,7 +130,7 @@ class ActorCritic:
         if self.log:
             self.logger = SummaryWriter(
                 log_dir=TENSORBOARD_DIR
-                / f"actor_critic-cartpole-{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+                / f"actor_critic-cartpole-{datetime.now().strftime('%Y-%m-%d %H-%M-%S')}",
             )
 
     def train(self, max_steps: int) -> None:
