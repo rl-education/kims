@@ -141,7 +141,6 @@ class SAC:
         batch_size: int = 256,
         gamma: float = 0.99,
         soft_tau: float = 1e-2,
-        epsilon: float = 1e-6,
         seed: int = 777,
         log: bool = False,
     ):
@@ -182,7 +181,6 @@ class SAC:
         self.batch_size = batch_size
         self.gamma = gamma
         self.soft_tau = soft_tau
-        self.epsilon = epsilon
 
         self.log = log
         if self.log:
@@ -278,8 +276,7 @@ class SAC:
         z = normal.sample()
         action = torch.tanh(z)
 
-        log_prob = normal.log_prob(z) - torch.log(1 - action.pow(2) + self.epsilon)
-        log_prob = log_prob.sum(-1, keepdim=True)
+        log_prob = normal.log_prob(z)
 
         return action, log_prob
 
