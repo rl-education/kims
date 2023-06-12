@@ -97,7 +97,7 @@ def test(env: gym.Env, action_num: int, policy_table: np.ndarray) -> None:
         state = env.reset()
 
         while True:
-            time.sleep(0.5)
+            time.sleep(1)
             env.render()
 
             action = np.random.choice(action_num, 1, p=policy_table[state][:])[0]

@@ -106,7 +106,7 @@ class QLearning:
             state = self.env.reset()
 
             while True:
-                time.sleep(0.5)
+                time.sleep(1)
                 self.env.render()
 
                 action = np.argmax(self.q_table[state])
