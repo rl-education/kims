@@ -49,21 +49,6 @@ class BatchBuffer:
         # GAE return, advantage will be filled later
         self.buffer.append((state, action, log_action_prob, reward, next_state, done))
 
-    def make_mini_batch(self, mini_batch_size: int):
-        start_idx = 0
-        for _ in range(self.batch_size // mini_batch_size):
-            mini_batch = self.buffer[start_idx: start_idx + mini_batch_size]
-            state, action, log_action_prob, reward, next_state, done = zip(*mini_batch)
-            yield (
-                torch.tensor(state, dtype=torch.float),
-                torch.tensor(action, dtype=torch.float),
-                torch.stack(log_action_prob),
-                torch.tensor(reward, dtype=torch.float),
-                torch.tensor(next_state, dtype=torch.float),
-                torch.tensor(done, dtype=torch.float),
-            )
-            start_idx += mini_batch_size
-
     def clear(self):
         self.buffer = [None] * self.batch_size
         self.position = 0
@@ -134,18 +119,18 @@ class PPO:
     """PPO method."""
 
     def __init__(
-            self,
-            env_name: str,
-            hidden_dim: int = 256,
-            learning_rate: float = 3e-4,
-            batch_size: int ,
-            mini_batch_size: int = 256,
-            ppo_epochs: int = 10,
-            gamma: float = 0.99,
-            tau: float = 0.95,
-            clip_param: float = 0.2,
-            seed: int = 777,
-            log: bool = False,
+        self,
+        env_name: str,
+        hidden_dim: int = 256,
+        learning_rate: float = 3e-4,
+        batch_size: int = 10,
+        mini_batch_size: int = 32,
+        ppo_epochs: int = 10,
+        gamma: float = 0.99,
+        tau: float = 0.95,
+        clip_param: float = 0.2,
+        seed: int = 777,
+        log: bool = False,
     ) -> None:
         self.env = gym.wrappers.RescaleAction(gym.make(env_name), min_action=-1.0, max_action=1.0)
         self.env.seed(seed)
@@ -186,7 +171,7 @@ class PPO:
         state = self.env.reset()
         returns = 0.0
         episode_idx = 0
-        batch_buffer = BatchBuffer(self.batch_size)
+        batch_buffer = BatchBuffer(self.batch_size * self.mini_batch_size)
 
         for step in progress_bar:
             action, log_action_prob = self.select_action(state)
@@ -216,9 +201,9 @@ class PPO:
         for episode_idx in range(n_episodes):
             while not done:
                 if render:
-                    self.env.render(mode="human")
+                    self.env.render()
 
-                action = self.select_action(state=state)
+                action, _ = self.select_action(state=state)
                 next_state, reward, done, _ = self.env.step(action)
                 state = next_state
                 returns += float(reward)
@@ -235,82 +220,76 @@ class PPO:
         action = torch.tanh(z)
         return action.detach().cpu().numpy()[0], normal.log_prob(z)
 
-    def ppo_update(self, batch_buffer: BatchBuffer) -> None:
+    def compute_log_action_prob(self, state: Tensor, action: Tensor) -> Tensor:
+        mean, std = self.policy_net(state)
+        normal = torch.distributions.Normal(mean, std)
+        log_action_prob = normal.log_prob(action)
+        return log_action_prob.sum(axis=-1)
+
+    def ppo_update(self, batch) -> None:
         """Update model."""
+        state, action, old_log_action_prob, reward, next_state, done = batch
+
+        states = torch.FloatTensor(state).to(DEVICE)
+        actions = torch.FloatTensor(action).to(DEVICE)
+        log_action_probs = torch.FloatTensor(old_log_action_prob).to(DEVICE)
+        rewards = torch.FloatTensor(reward).to(DEVICE)
+        next_states = torch.FloatTensor(next_state).to(DEVICE)
+        dones = torch.FloatTensor(done).to(DEVICE)
+
+        # Compute advantage
+        gaes = self.compute_gae(states, rewards, next_states, dones)
+        advantages = self.compute_advantage(states, gaes)
+
+        # Update policy network
         for _ in range(self.ppo_epochs):
-            for mini_batch in self.make_mini_batch(batch_buffer):
-                s, a,r, s_prime, done_mask, old_log_prob, td_target, advantage = self.calc_advantage(mini_batch)
+            for state, action, old_log_action_prob, gae, advantage in self.ppo_iter(self.mini_batch_size, states, actions, log_action_probs, gaes, advantages):
+                new_log_action_prob = self.compute_log_action_prob(state, action)
+                ratio = (new_log_action_prob - old_log_action_prob).exp().unsqueeze(1)
+                clipped_ratio = ratio.clamp(min=1.0 - self.clip_param, max=1.0 + self.clip_param).unsqueeze(1)
+                surrogate = torch.min(ratio * advantage, clipped_ratio * advantage)
+                policy_loss = -surrogate.mean()
 
-                mu, std = self.policy_net(s, softmax_dim=1)
-                dist = nn.distributions.Normal(mu, std)
-                log_prob = dist.log_prob(a)
-                ratio = torch.exp(log_prob - old_log_prob)  # a/b == exp(log(a)-log(b))
+                self.policy_optimizer.zero_grad()
+                policy_loss.backward()
+                self.policy_optimizer.step()
 
-                surr1 = ratio * advantage
-                surr2 = torch.clamp(ratio, 1 - self.clip_param, 1 + self.clip_param) * advantage
-                loss = -torch.min(surr1, surr2) + F.smooth_l1_loss(self.v(s), td_target)
+                # Update value network
+                value_loss = F.mse_loss(self.value_net(state), gae.detach())
 
-                self.optimizer.zero_grad()
-                loss.mean().backward()
-                nn.utils.clip_grad_norm_(self.parameters(), 1.0)
-                self.optimizer.step()
-                self.optimization_step += 1
+                self.value_optimizer.zero_grad()
+                value_loss.backward()
+                self.value_optimizer.step()
 
-    def make_mini_batch(self, batch_buffer: BatchBuffer):
-        s_batch, a_batch, r_batch, s_prime_batch, prob_a_batch, done_batch = [], [], [], [], [], []
-        data = []
-        for j in range(self.batch_size):
-            for i in range(self.mini_batch_size):
-                transition = batch_buffer.buffer[i]
-                s_lst, a_lst, r_lst, s_prime_lst, prob_a_lst, done_lst = [], [], [], [], [], []
-                s, a, prob_a, r, s_prime, done = transition
+    def compute_gae(self, state, reward, next_state, done):
+        values = torch.FloatTensor(state).to(DEVICE)
+        next_values = torch.FloatTensor(next_state).to(DEVICE)
+        reward = torch.FloatTensor(reward).unsqueeze(1).to(DEVICE)
+        done = torch.FloatTensor(done).unsqueeze(1).to(DEVICE)
 
-                s_lst.append(s)
-                a_lst.append([a])
-                r_lst.append([r])
-                s_prime_lst.append(s_prime)
-                prob_a_lst.append([prob_a])
-                done_mask = 0 if done else 1
-                done_lst.append([done_mask])
+        gae = 0.0
+        returns = []
+        for step in reversed(range(len(reward))):
+            delta = reward[step] + self.gamma * next_values[step] * (1 - done[step]) - values[step]
+            gae = delta + self.gamma * self.tau * (1 - done[step]) * gae
+            returns.insert(0, gae + values[step])
+        return torch.stack(returns)
 
-                s_batch.append(s_lst)
-                a_batch.append(a_lst)
-                r_batch.append(r_lst)
-                s_prime_batch.append(s_prime_lst)
-                prob_a_batch.append(prob_a_lst)
-                done_batch.append(done_lst)
+    def compute_advantage(self, state, gae):
+        values = torch.FloatTensor(state).to(DEVICE)
+        advantage = gae - values
+        return advantage
 
-            mini_batch = torch.tensor(s_batch, dtype=torch.float), torch.tensor(a_batch, dtype=torch.float), \
-                torch.tensor(prob_a_batch, dtype=torch.float), torch.tensor(r_batch, dtype=torch.float), \
-                torch.tensor(s_prime_batch, dtype=torch.float), torch.tensor(done_batch, dtype=torch.float),
-            data.append(mini_batch)
+    def ppo_iter(self, mini_batch_size, states, actions, log_probs, returns, advantage):
+        batch_size = states.size(0)
+        for _ in range(batch_size // mini_batch_size):
+            rand_ids = np.random.randint(0, batch_size, mini_batch_size)
+            yield states[rand_ids], actions[rand_ids], log_probs[rand_ids], returns[rand_ids], advantage[rand_ids]
 
-        return data
-
-    def calc_advantage(self, data):
-        data_with_adv = []
-        for mini_batch in data:
-            s, a, old_log_prob, r, s_prime, done_mask = mini_batch
-            with torch.no_grad():
-                td_target = r + self.gamma * self.v(s_prime) * done_mask
-                delta = td_target - self.v(s)
-            delta = delta.numpy()
-
-            advantage_lst = []
-            advantage = 0.0
-            for delta_t in delta[::-1]:
-                advantage = self.gamma * self.tau * advantage + delta_t[0]
-                advantage_lst.append([advantage])
-            advantage_lst.reverse()
-            advantage = torch.tensor(advantage_lst, dtype=torch.float)
-            data_with_adv.append((s, a, old_log_prob, r, s_prime, done_mask, td_target, advantage))
-
-        return data_with_adv
 
 
 if __name__ == "__main__":
-    SEED = 777
-    set_seed(seed=SEED)
-    sac = PPO(env_name="Pendulum-v1", log=False, seed=SEED)
-    sac.train(max_steps=12_000)
-    sac.test(n_episodes=3, render=True)
+    agent = PPO(env_name="Pendulum-v1")
+    agent.train(max_steps=1)
+    agent.test(n_episodes=3, render=True)
+
