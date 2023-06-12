@@ -13,7 +13,7 @@ from tqdm import trange
 
 USE_CUDA = torch.cuda.is_available()
 DEVICE = torch.device("cuda" if USE_CUDA else "cpu")
-TENSORBOARD_DIR = Path(__file__).parent.parent / "runs"
+TENSORBOARD_DIR = Path(__file__).parent.parent.parent / "runs"
 
 
 def set_seed(seed: int = 777):
@@ -79,11 +79,11 @@ class ValueNetwork(nn.Module):
 class SoftQNetwork(nn.Module):
     """Multi layer perceptron network for predicting action value."""
 
-    def __init__(self, state_dim: int, hidden_dim: int, num_actions: int):
+    def __init__(self, state_dim: int, hidden_dim: int, action_dim: int):
         super().__init__()
 
         self.layers = nn.Sequential(
-            nn.Linear(state_dim + num_actions, hidden_dim),
+            nn.Linear(state_dim + action_dim, hidden_dim),
             nn.ReLU(),
             nn.Linear(hidden_dim, hidden_dim),
             nn.ReLU(),
@@ -103,7 +103,7 @@ class GaussianPolicyNetwork(nn.Module):
         self,
         state_dim: int,
         hidden_dim: int,
-        num_actions: int,
+        action_dim: int,
         log_std_range: tuple[int, int] = (-20, 2),
     ):
         super().__init__()
@@ -117,8 +117,8 @@ class GaussianPolicyNetwork(nn.Module):
             nn.ReLU(),
         )
 
-        self.mean_linear = nn.Linear(hidden_dim, num_actions)
-        self.log_std_linear = nn.Linear(hidden_dim, num_actions)
+        self.mean_linear = nn.Linear(hidden_dim, action_dim)
+        self.log_std_linear = nn.Linear(hidden_dim, action_dim)
 
     def forward(self, x: Tensor) -> tuple[Tensor, Tensor]:
         intermediate = self.layers(x)
@@ -148,7 +148,7 @@ class SAC:
         self.env = gym.wrappers.RescaleAction(gym.make(env_name), min_action=-1, max_action=1)
         self.env.seed = seed
         state_dim = self.env.observation_space.shape[0]
-        num_actions = self.env.action_space.shape[0]
+        action_dim = self.env.action_space.shape[0]
 
         self.value_net = ValueNetwork(state_dim=state_dim, hidden_dim=hidden_dim).to(DEVICE)
         self.target_value_net = ValueNetwork(state_dim=state_dim, hidden_dim=hidden_dim).to(DEVICE)
@@ -161,13 +161,13 @@ class SAC:
         self.soft_q_net = SoftQNetwork(
             state_dim=state_dim,
             hidden_dim=hidden_dim,
-            num_actions=num_actions,
+            action_dim=action_dim,
         ).to(DEVICE)
 
         self.policy_net = GaussianPolicyNetwork(
             state_dim=state_dim,
             hidden_dim=hidden_dim,
-            num_actions=num_actions,
+            action_dim=action_dim,
         ).to(DEVICE)
 
         self.value_criterion = nn.MSELoss()
