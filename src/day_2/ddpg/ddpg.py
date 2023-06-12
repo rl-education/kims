@@ -229,11 +229,7 @@ class DDPG:
             3. Add noise to action.
             4. Clip action to [-1.0, 1.0].
         """
-        state_tensor = torch.FloatTensor(state).unsqueeze(0).to(DEVICE)
-        action = self.actor_net(state_tensor)
-        action = action.detach().cpu().numpy()[0, 0]
-        action += self.action_noise * np.random.randn(self.env.action_space.shape[0])
-        action = np.clip(action, -1.0, 1.0)
+        # TODO 1: Select action
         return action
 
     def ddpg_update(self) -> None:
@@ -260,34 +256,32 @@ class DDPG:
         self.update_critic_network(state, action, next_state, reward, done)
 
         # Soft target update
-        self.soft_target_update(
-            src_net=self.critic_net,
-            target_net=self.target_critic_net,
-            soft_tau=self.soft_tau,
-        )
-        self.soft_target_update(
-            src_net=self.actor_net,
-            target_net=self.target_actor_net,
-            soft_tau=self.soft_tau,
-        )
+        # TODO 2: Update soft target update
 
     def update_actor_network(self, state) -> None:
-        actor_loss = self.critic_net(state, self.actor_net(state))
-        actor_loss = -actor_loss.mean()
+        """Update actor network.
+
+        Notes:
+            actor_loss: -Q(s, pi(s))
+        """
+        # TODO 3: Update actor network
 
         self.actor_optimizer.zero_grad()
         actor_loss.backward()
         self.actor_optimizer.step()
 
     def update_critic_network(self, state, action, next_state, reward, done) -> None:
+        """Update critic network.
+
+        Notes:
+            critic_loss: (td_target - Q(s, a))^2
+            td_target: r + gamma * Q'(s', pi'(s'))
+        """
         # Compute td target
-        next_action = self.target_actor_net(next_state)
-        target_value = self.target_critic_net(next_state, next_action.detach())
-        expected_value = reward + (1.0 - done) * self.gamma * target_value
+        # TODO 4: Compute td target
 
         # Compute critic loss
-        value = self.critic_net(state, action)
-        critic_loss = self.critic_loss_func(value, expected_value.detach())
+        # TODO 5: Compute critic_loss
 
         self.critic_optimizer.zero_grad()
         critic_loss.backward()
@@ -304,9 +298,7 @@ class DDPG:
         Notes:
             target = (1 - soft_tau) * target + soft_tau * src
         """
-        for param, target_param in zip(src_net.parameters(), target_net.parameters()):
-            data = target_param.data * (1.0 - soft_tau) + param.data * soft_tau
-            target_param.data.copy_(data)
+        # TODO 6: Soft update the target network parameters
 
 
 if __name__ == "__main__":
