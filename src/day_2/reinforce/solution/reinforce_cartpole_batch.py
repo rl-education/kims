@@ -211,6 +211,6 @@ class REINFORCE:
 if __name__ == "__main__":
     SEED = 777
     set_seed(SEED)
-    reinforce = REINFORCE(env_name="CartPole-v1", log=True, seed=SEED, batch_size=4)
+    reinforce = REINFORCE(env_name="CartPole-v1", log=True, seed=SEED, batch_size=128)
     reinforce.train(n_episodes=500)
     reinforce.test(n_episodes=1, render=True)

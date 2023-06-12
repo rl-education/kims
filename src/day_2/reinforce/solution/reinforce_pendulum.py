@@ -265,6 +265,6 @@ class REINFORCE:
 if __name__ == "__main__":
     SEED = 777
     set_seed(SEED)
-    reinforce = REINFORCE(env_name="Pendulum-v1", log=False, batch_size=16, seed=SEED)
+    reinforce = REINFORCE(env_name="Pendulum-v1", log=False, batch_size=128, seed=SEED)
     reinforce.train(n_episodes=500)
     reinforce.test(n_episodes=1, render=True)

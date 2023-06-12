@@ -8,7 +8,6 @@ from pathlib import Path
 import gym
 import numpy as np
 import torch
-from gym.wrappers import RescaleAction
 from torch import Tensor, nn, optim
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import trange
@@ -87,8 +86,8 @@ class REINFORCE:
         hidden_dim: int = 128,
         gamma: float = 0.99,
         learning_rate: float = 0.001,
-        log: bool = True,
         batch_size: int = 2,
+        log: bool = True,
         seed: int = 777,
     ):
         # Normalize action space
