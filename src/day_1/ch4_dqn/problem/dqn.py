@@ -81,7 +81,7 @@ class DQN:
         # Initialize tensorbaord to visualize results
         algorithm = "ddqn" if use_ddqn else "dqn"
         self.writer = SummaryWriter(
-            log_dir=f"./runs/cartpole-{algorithm}-" + datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            log_dir=f"runs/cartpole-{algorithm}-" + datetime.now().strftime("%Y-%m-%d-%H-%M-%S"),
         )
 
     def select_action(self, state: np.ndarray) -> np.ndarray:

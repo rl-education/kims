@@ -1,30 +1,30 @@
-"""FrozenLake human play environment."""
-import sys
-import termios
-import tty
+"""
+FrozenLake human play environment.
+
+Note: Only run on Windows OS
+"""
+import msvcrt
 
 import gym
 
 ARROW_KEYS = {
-    "\x1b[A": 3,
-    "\x1b[B": 1,
-    "\x1b[C": 2,
-    "\x1b[D": 0,
+    b"H": 3,
+    b"P": 1,
+    b"M": 2,
+    b"K": 0,
 }
 
 
 class _Getch:
     def __call__(self) -> str:
-        fd = sys.stdin.fileno()
-        old_settings = termios.tcgetattr(fd)
-        try:
-            tty.setraw(sys.stdin.fileno())
-            ch = sys.stdin.read(3)
-            if ch not in ARROW_KEYS:
-                raise InterruptedError
-        finally:
-            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-        return ch
+        while True:
+            if msvcrt.kbhit():
+                ch = msvcrt.getch()
+                if ch == b"\xe0":  # indicates an arrow key
+                    ch = msvcrt.getch()  # read the next byte
+                    if ch not in ARROW_KEYS:
+                        raise InterruptedError
+                    return ch
 
 
 def main() -> None:
