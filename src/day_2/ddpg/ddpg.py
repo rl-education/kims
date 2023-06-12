@@ -43,7 +43,7 @@ class ReplayBuffer:
         self,
         state: np.ndarray,
         action: np.ndarray,
-        reward: np.float,
+        reward: np.float64,
         next_state: np.ndarray,
         done: bool,
     ):
