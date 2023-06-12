@@ -5,7 +5,6 @@ Reference:
 """
 
 import random
-from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
@@ -18,7 +17,7 @@ from tqdm import trange
 
 USE_CUDA = torch.cuda.is_available()
 DEVICE = torch.device("cuda" if USE_CUDA else "cpu")
-TENSORBOARD_DIR = Path(__file__).parent.parent / "runs"
+TENSORBOARD_DIR = Path(__file__).parent.parent.parent / "runs"
 
 
 def set_seed(seed: int = 777):
@@ -35,19 +34,26 @@ def set_seed(seed: int = 777):
 class ReplayBuffer:
     """Replay buffer for SAC."""
 
-    def __init__(self, capacity):
+    def __init__(self, capacity: int):
         self.capacity = capacity
         self.buffer = []
         self.position = 0
 
-    def push(self, state, action, reward, next_state, done):
+    def push(
+        self,
+        state: np.ndarray,
+        action: np.ndarray,
+        reward: np.float,
+        next_state: np.ndarray,
+        done: bool,
+    ):
         """Push a transition to the buffer."""
         if len(self.buffer) < self.capacity:
             self.buffer.append(None)
         self.buffer[self.position] = (state, action, reward, next_state, done)
         self.position = (self.position + 1) % self.capacity
 
-    def sample(self, batch_size):
+    def sample(self, batch_size: int):
         """Sample a batch of transitions from the buffer."""
         batch = random.sample(self.buffer, batch_size)
         state, action, reward, next_state, done = map(np.stack, zip(*batch))
@@ -71,7 +77,7 @@ class QNetwork(nn.Module):
             nn.Linear(hidden_dim, 1),
         )
 
-    def forward(self, state: torch.Tensor, action: torch.Tensor) -> torch.Tensor:
+    def forward(self, state: Tensor, action: Tensor) -> Tensor:
         """Forward."""
         emb = torch.cat([state, action], dim=1)
         return self.layers(emb)
@@ -97,7 +103,7 @@ class DeterministicPolicyNetwork(nn.Module):
             nn.Tanh(),
         )
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, x: Tensor) -> tuple[Tensor, Tensor]:
         return self.layers(x)
 
 
@@ -183,6 +189,8 @@ class DDPG:
         for step in progress_bar:
             action = self.select_action(state)
             next_state, reward, done, _ = self.env.step(action)
+            print(type(state), type(action), type(reward), type(next_state), type(done))
+            exit()
             self.replay_buffer.push(state, action, reward, next_state, done)
 
             # Update if replay buffer has enough transitions
@@ -271,7 +279,7 @@ class DDPG:
             soft_tau=self.soft_tau,
         )
 
-    def update_actor_network(self, state) -> None:
+    def update_actor_network(self, state: Tensor) -> None:
         actor_loss = self.critic_net(state, self.actor_net(state))
         actor_loss = -actor_loss.mean()
 
@@ -279,7 +287,14 @@ class DDPG:
         actor_loss.backward()
         self.actor_optimizer.step()
 
-    def update_critic_network(self, state, action, next_state, reward, done) -> None:
+    def update_critic_network(
+        self,
+        state: Tensor,
+        action: Tensor,
+        next_state: Tensor,
+        reward: Tensor,
+        done: Tensor,
+    ) -> None:
         # Compute td target
         next_action = self.target_actor_net(next_state)
         target_value = self.target_critic_net(next_state, next_action.detach())
