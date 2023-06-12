@@ -12,7 +12,7 @@ from pathlib import Path
 import gym
 import numpy as np
 import torch
-from torch import nn, optim
+from torch import Tensor, nn, optim
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import trange
 
@@ -41,12 +41,14 @@ class ReplayBuffer:
         self.position = 0
 
     def push(self, state, action, reward, next_state, done):
+        """Push a transition to the buffer."""
         if len(self.buffer) < self.capacity:
             self.buffer.append(None)
         self.buffer[self.position] = (state, action, reward, next_state, done)
         self.position = (self.position + 1) % self.capacity
 
     def sample(self, batch_size):
+        """Sample a batch of transitions from the buffer."""
         batch = random.sample(self.buffer, batch_size)
         state, action, reward, next_state, done = map(np.stack, zip(*batch))
         return state, action, reward, next_state, done
@@ -55,7 +57,7 @@ class ReplayBuffer:
         return len(self.buffer)
 
 
-class ValueNetwork(nn.Module):
+class QNetwork(nn.Module):
     """Multi layer perceptron network for predicting state value."""
 
     def __init__(self, state_dim: int, hidden_dim: int, num_actions: int):
@@ -99,17 +101,6 @@ class PolicyNetwork(nn.Module):
         return self.layers(x)
 
 
-class NormalizedActions(gym.ActionWrapper):
-    def action(self, action: np.ndarray):
-        low = self.action_space.low
-        high = self.action_space.high
-
-        action = low + (action + 1.0) * 0.5 * (high - low)
-        action = np.clip(action, low, high)
-
-        return action
-
-
 class DDPG:
     """Deep deterministic policy gradient method."""
 
@@ -121,24 +112,24 @@ class DDPG:
         policy_learning_rate: float = 1e-4,
         replay_buffer_size: int = 1_000_000,
         soft_tau: float = 1e-2,
-        batch_size: int = 128,
+        batch_size: int = 256,
         gamma: float = 0.99,
         seed: int = 777,
         log: bool = False,
     ):
-        self.env: gym.Env = NormalizedActions(gym.make(env_name))
+        self.env: gym.Env = gym.wrappers.RescaleAction(gym.make(env_name), -1.0, 1.0)
         self.env.seed(seed)
 
         state_dim = self.env.observation_space.shape[0]
         num_actions = self.env.action_space.shape[0]
         self.action_noise = 0.1
 
-        self.value_net = ValueNetwork(
+        self.value_net = QNetwork(
             state_dim=state_dim,
             hidden_dim=hidden_dim,
             num_actions=num_actions,
         ).to(DEVICE)
-        self.target_value_net = ValueNetwork(
+        self.target_value_net = QNetwork(
             state_dim=state_dim,
             hidden_dim=hidden_dim,
             num_actions=num_actions,
@@ -176,33 +167,32 @@ class DDPG:
                 log_dir=TENSORBOARD_DIR / f"dddg-pendulum-{datetime.now().strftime('%Y%m%d-%H%M%S')}",
             )
 
-    def soft_target_update(
-        self,
-        src_net: nn.Module,
-        target_net: nn.Module,
-        soft_tau: float = 1.0,
-    ) -> None:
-        for param, target_param in zip(src_net.parameters(), target_net.parameters()):
-            data = target_param.data * (1.0 - soft_tau) + param.data * soft_tau
-            target_param.data.copy_(data)
-
     def train(self, max_steps: int) -> None:
-        rewards = []
+        """Train the agent.
 
+        Notes:
+            1. The agent execute one step at a time.
+            2. Store the transition to replay buffer.
+            3. If the replay buffer has transition more than buffer_size, update the network with batch size.
+        """
         progress_bar = trange(max_steps)
         state = self.env.reset()
         returns = 0
         episode_idx = 0
+
         for step in progress_bar:
             action = self.select_action(state)
             next_state, reward, done, _ = self.env.step(action)
-
             self.replay_buffer.push(state, action, reward, next_state, done)
+
+            # Update if replay buffer has enough transitions
             if len(self.replay_buffer) > self.batch_size:
                 self.ddpg_update()
 
             state = next_state
             returns += float(reward)
+
+            # Log if episode ends
             if done:
                 progress_bar.set_description(
                     f"[TRAIN] Episode {episode_idx} ({step} steps) reward: {returns:.02f}",
@@ -212,10 +202,8 @@ class DDPG:
                 episode_idx += 1
             step += 1
 
-            rewards.append(returns)
-
     def test(self, n_episodes: int, render: bool = False) -> None:
-        """."""
+        """Test agent."""
         state = self.env.reset()
         returns = 0.0
         done = False
@@ -233,15 +221,33 @@ class DDPG:
             print(f"[TEST] Episode {episode_idx} reward: {returns}")
 
     def select_action(self, state: np.ndarray) -> np.ndarray:
-        """Get action."""
+        """Select action.
+
+        Notes:
+            1. Convert state to tensor.
+            2. Get action from policy network.
+            3. Add noise to action.
+            4. Clip action to [-1.0, 1.0].
+        """
         state_tensor = torch.FloatTensor(state).unsqueeze(0).to(DEVICE)
         action = self.policy_net(state_tensor)
         action = action.detach().cpu().numpy()[0, 0]
         action += self.action_noise * np.random.randn(self.env.action_space.shape[0])
+        action = np.clip(action, -1.0, 1.0)
         return action
 
     def ddpg_update(self) -> None:
-        """Update network parameters."""
+        """Update network parameters.
+
+        Notes:
+            1. Sample a batch of transitions from replay buffer.
+            2. Compute the actor loss.
+            2. Compute the critic loss.
+            3. Update the actor network.
+            4. Update the critic network.
+            5. Update the target networks.
+        """
+        # Sample a batch of transitions from replay buffer
         state, action, reward, next_state, done = self.replay_buffer.sample(self.batch_size)
 
         state = torch.FloatTensor(state).to(DEVICE)
@@ -250,24 +256,10 @@ class DDPG:
         reward = torch.FloatTensor(reward).unsqueeze(1).to(DEVICE)
         done = torch.FloatTensor(np.float32(done)).unsqueeze(1).to(DEVICE)
 
-        policy_loss = self.value_net(state, self.policy_net(state))
-        policy_loss = -policy_loss.mean()
+        self.update_actor_network(state)
+        self.update_critic_network(state, action, next_state, reward, done)
 
-        next_action = self.target_policy_net(next_state)
-        target_value = self.target_value_net(next_state, next_action.detach())
-        expected_value = reward + (1.0 - done) * self.gamma * target_value
-
-        value = self.value_net(state, action)
-        value_loss = self.value_criterion(value, expected_value.detach())
-
-        self.policy_optimizer.zero_grad()
-        policy_loss.backward()
-        self.policy_optimizer.step()
-
-        self.value_optimizer.zero_grad()
-        value_loss.backward()
-        self.value_optimizer.step()
-
+        # Soft target update
         self.soft_target_update(
             src_net=self.value_net,
             target_net=self.target_value_net,
@@ -279,10 +271,47 @@ class DDPG:
             soft_tau=self.soft_tau,
         )
 
+    def update_actor_network(self, state) -> None:
+        policy_loss = self.value_net(state, self.policy_net(state))
+        policy_loss = -policy_loss.mean()
+
+        self.policy_optimizer.zero_grad()
+        policy_loss.backward()
+        self.policy_optimizer.step()
+
+    def update_critic_network(self, state, action, next_state, reward, done) -> None:
+        # Compute td target
+        next_action = self.target_policy_net(next_state)
+        target_value = self.target_value_net(next_state, next_action.detach())
+        expected_value = reward + (1.0 - done) * self.gamma * target_value
+
+        # Compute critic loss
+        value = self.value_net(state, action)
+        value_loss = self.value_criterion(value, expected_value.detach())
+
+        self.value_optimizer.zero_grad()
+        value_loss.backward()
+        self.value_optimizer.step()
+
+    def soft_target_update(
+        self,
+        src_net: nn.Module,
+        target_net: nn.Module,
+        soft_tau: float = 1.0,
+    ) -> None:
+        """Soft update the target network parameters.
+
+        Notes:
+            target = (1 - soft_tau) * target + soft_tau * src
+        """
+        for param, target_param in zip(src_net.parameters(), target_net.parameters()):
+            data = target_param.data * (1.0 - soft_tau) + param.data * soft_tau
+            target_param.data.copy_(data)
+
 
 if __name__ == "__main__":
     SEED = 777
     set_seed(SEED)
-    ddpg = DDPG(env_name="Pendulum-v1", log=False)
+    ddpg = DDPG(env_name="Pendulum-v1", log=False, batch_size=256, seed=SEED)
     ddpg.train(max_steps=12_000)
     ddpg.test(n_episodes=1, render=True)
