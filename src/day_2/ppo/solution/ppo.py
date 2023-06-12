@@ -1,15 +1,12 @@
-"""PPO implementation for Pendulum-v1 environment."""
-
 import random
 from datetime import datetime
 from pathlib import Path
-from typing import Generator
 
 import gym
 import numpy as np
 import torch
+import torch.nn.functional as F
 from torch import Tensor, nn, optim
-from torch.nn import functional as F
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import trange
 
@@ -29,49 +26,15 @@ def set_seed(seed: int = 777):
     torch.backends.cudnn.benchmark = False
 
 
-class BatchBuffer:
-    """Batch buffer for PPO."""
-
-    def __init__(self, batch_size: int):
-        self.batch_size = batch_size
-        self.buffer = []
-        self.position = 0
-
-    def push(
-            self,
-            state: np.ndarray,
-            action: np.ndarray,
-            log_action_prob: Tensor,
-            reward: np.float64,
-            next_state: np.ndarray,
-            done: bool,
-    ):
-        # GAE return, advantage will be filled later
-        self.buffer.append((state, action, log_action_prob, reward, next_state, done))
-
-    def clear(self):
-        self.buffer = [None] * self.batch_size
-        self.position = 0
-
-    def full(self):
-        return len(self.buffer) == self.batch_size
-
-    def __len__(self):
-        return len(self.buffer)
-
-    def __iter__(self):
-        return zip(*self.buffer)
-
-
 class GaussianPolicyNetwork(nn.Module):
     """Multi layer perceptron network for deciding policy."""
 
     def __init__(
-            self,
-            state_dim: int,
-            hidden_dim: int,
-            action_dim: int,
-            log_std_range: tuple[int, int] = (-20, 2),
+        self,
+        state_dim: int,
+        hidden_dim: int,
+        action_dim: int,
+        log_std_range: tuple[int, int] = (-20, 2),
     ):
         super().__init__()
 
@@ -115,181 +78,218 @@ class ValueNetwork(nn.Module):
         return self.layers(state)
 
 
-class PPO:
-    """PPO method."""
+class ActorCritic(nn.Module):
+    def __init__(
+        self,
+        state_dim: int,
+        hidden_dim: int,
+        action_dim: int,
+        log_std_range: tuple[int, int] = (-20, 2),
+    ):
+        super().__init__()
+        self.log_std_min, self.log_std_max = log_std_range
 
+        self.layer = nn.Sequential(
+            nn.Linear(state_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.ReLU(),
+        )
+        self.mean_layer = nn.Linear(hidden_dim, action_dim)
+        self.log_std_layer = nn.Linear(hidden_dim, action_dim)
+        self.value_layer = nn.Linear(hidden_dim, 1)
+
+    def pi(self, x):
+        x = self.layer(x)
+        mu = 2 * torch.tanh(self.mean_layer(x))
+        log_std = self.log_std_layer(x)
+        log_std = torch.clamp(log_std, self.log_std_min, self.log_std_max)
+        return mu, log_std.exp()
+
+    def v(self, x):
+        x = self.layer(x)
+        v = self.value_layer(x)
+        return v
+
+
+class PPO:
     def __init__(
         self,
         env_name: str,
         hidden_dim: int = 256,
         learning_rate: float = 3e-4,
-        batch_size: int = 10,
-        mini_batch_size: int = 32,
-        ppo_epochs: int = 10,
-        gamma: float = 0.99,
-        tau: float = 0.95,
+        gamma: float = 0.9,
+        tau: float = 0.9,
         clip_param: float = 0.2,
+        n_epochs: int = 10,
+        rollout_len: int = 3,
+        batch_size=320,
+        minibatch_size=32,
         seed: int = 777,
         log: bool = False,
-    ) -> None:
-        self.env = gym.wrappers.RescaleAction(gym.make(env_name), min_action=-1.0, max_action=1.0)
+    ):
+        # self.env = gym.wrappers.RescaleAction(gym.make(env_name), min_action=-1.0, max_action=1.0)
+        self.env = gym.make(env_name)
         self.env.seed(seed)
+
         state_dim = self.env.observation_space.shape[0]
         action_dim = self.env.action_space.shape[0]
 
-        self.policy_net = GaussianPolicyNetwork(
+        self.model = ActorCritic(
             state_dim=state_dim,
             hidden_dim=hidden_dim,
             action_dim=action_dim,
         )
+        self.optimizer = optim.Adam(self.model.parameters(), lr=learning_rate)
 
-        self.value_net = ValueNetwork(
-            state_dim=state_dim,
-            hidden_dim=hidden_dim,
-        )
-
-        self.value_optimizer = optim.Adam(self.value_net.parameters(), lr=learning_rate)
-        self.policy_optimizer = optim.Adam(self.policy_net.parameters(), lr=learning_rate)
-
-        # Define hyperparameter for training
-        self.batch_size = batch_size
-        self.mini_batch_size = mini_batch_size
-        self.ppo_epochs = ppo_epochs
         self.gamma = gamma
         self.tau = tau
         self.clip_param = clip_param
-
+        self.n_epochs = n_epochs
+        self.rollout_len = rollout_len
+        self.batch_size = batch_size
+        self.minibatch_size = minibatch_size
         self.log = log
         if self.log:
-            self.writer = SummaryWriter(
+            self.logger = SummaryWriter(
                 log_dir=TENSORBOARD_DIR / f"ppo-pendulum-{datetime.now().strftime('%Y%m%d-%H%M%S')}",
             )
 
-    def train(self, max_steps: int) -> None:
-        """Learn model with PPO."""
-        progress_bar = trange(max_steps)
-        state = self.env.reset()
-        returns = 0.0
-        episode_idx = 0
-        batch_buffer = BatchBuffer(self.batch_size * self.mini_batch_size)
+    def train(self, n_episodes: int):
+        score = 0.0
+        print_interval = 20
+        batch = []
+        rollout = []
 
-        for step in progress_bar:
-            action, log_action_prob = self.select_action(state)
-            next_state, reward, done, _ = self.env.step(action)
-            batch_buffer.push(state, action, log_action_prob, reward, next_state, done)
-
-            if batch_buffer.full():
-                self.ppo_update(batch_buffer)
-                batch_buffer.clear()
-
-            state = next_state
-            returns += float(reward)
-
-            if done:
-                progress_bar.set_description(
-                    f"[TRAIN] Episode {episode_idx} ({step} steps) reward: {returns:.02f}",
-                )
-                state = self.env.reset()
-                returns = 0.0
-                episode_idx += 1
-
-    def test(self, n_episodes: int, render: bool = False) -> None:
-        """Test agent."""
-        state = self.env.reset()
-        returns = 0.0
-        done = False
-        for episode_idx in range(n_episodes):
+        for n_epi in range(n_episodes):
+            state = self.env.reset()
+            done = False
             while not done:
-                if render:
-                    self.env.render()
+                for _ in range(self.rollout_len):
+                    action, log_prob = self.select_action(state)
+                    s_prime, r, done, info = self.env.step([action.item()])
 
-                action, _ = self.select_action(state=state)
-                next_state, reward, done, _ = self.env.step(action)
-                state = next_state
-                returns += float(reward)
+                    rollout.append((state, action, r / 10.0, s_prime, log_prob.item(), done))
+                    if len(rollout) == self.rollout_len:
+                        batch.append(rollout)
+                        rollout = []
+
+                    state = s_prime
+                    score += r
+
+                if len(batch) == self.batch_size:
+                    batch = self.make_batch(batch)
+                    batch = self.calc_advantage(batch)
+                    self.train_net(batch)
+                    batch.clear()
+
             if self.log:
-                self.logger.add_scalar("reward", returns, episode_idx)
-            print(f"[TEST] Episode {episode_idx} reward: {returns}")
+                self.logger.add_scalar("train/episode_reward", score, n_epi)
 
-    def select_action(self, state: np.ndarray):
-        state_tensor = torch.FloatTensor(state).unsqueeze(0).to(DEVICE)
-        mean, std = self.policy_net(state_tensor)
+            if n_epi % print_interval == 0 and n_epi != 0:
+                print(
+                    "# of episode :{}, avg score : {:.1f}".format(
+                        n_epi,
+                        score / print_interval,
+                    ),
+                )
+                score = 0.0
 
-        normal = torch.distributions.Normal(mean, std)
-        z = normal.sample()
-        action = torch.tanh(z)
-        return action.detach().cpu().numpy()[0], normal.log_prob(z)
+        self.env.close()
 
-    def compute_log_action_prob(self, state: Tensor, action: Tensor) -> Tensor:
-        mean, std = self.policy_net(state)
-        normal = torch.distributions.Normal(mean, std)
-        log_action_prob = normal.log_prob(action)
-        return log_action_prob.sum(axis=-1)
+    def select_action(self, state: np.ndarray) -> np.ndarray:
+        """Select action."""
+        mu, std = self.model.pi(torch.from_numpy(state).float())
+        dist = torch.distributions.Normal(mu, std)
+        action = dist.sample()
+        log_action_prob = dist.log_prob(action)
+        return action, log_action_prob
 
-    def ppo_update(self, batch) -> None:
-        """Update model."""
-        state, action, old_log_action_prob, reward, next_state, done = batch
+    def compute_log_action_prob(self, state: np.ndarray, action: np.ndarray) -> Tensor:
+        """Compute log action probability."""
+        mu, std = self.model.pi(state)
+        dist = torch.distributions.Normal(mu, std)
+        log_action_prob = dist.log_prob(action)
+        return log_action_prob
 
-        states = torch.FloatTensor(state).to(DEVICE)
-        actions = torch.FloatTensor(action).to(DEVICE)
-        log_action_probs = torch.FloatTensor(old_log_action_prob).to(DEVICE)
-        rewards = torch.FloatTensor(reward).to(DEVICE)
-        next_states = torch.FloatTensor(next_state).to(DEVICE)
-        dones = torch.FloatTensor(done).to(DEVICE)
+    def make_batch(self, batch):
+        s_batch, a_batch, r_batch, s_prime_batch, prob_a_batch, done_batch = [], [], [], [], [], []
+        data = []
 
-        # Compute advantage
-        gaes = self.compute_gae(states, rewards, next_states, dones)
-        advantages = self.compute_advantage(states, gaes)
+        for _ in range(self.batch_size // self.minibatch_size):
+            for _ in range(self.minibatch_size):
+                rollout = batch.pop()
+                s_lst, a_lst, r_lst, s_prime_lst, prob_a_lst, done_lst = [], [], [], [], [], []
 
-        # Update policy network
-        for _ in range(self.ppo_epochs):
-            for state, action, old_log_action_prob, gae, advantage in self.ppo_iter(self.mini_batch_size, states, actions, log_action_probs, gaes, advantages):
-                new_log_action_prob = self.compute_log_action_prob(state, action)
-                ratio = (new_log_action_prob - old_log_action_prob).exp().unsqueeze(1)
-                clipped_ratio = ratio.clamp(min=1.0 - self.clip_param, max=1.0 + self.clip_param).unsqueeze(1)
-                surrogate = torch.min(ratio * advantage, clipped_ratio * advantage)
-                policy_loss = -surrogate.mean()
+                for transition in rollout:
+                    s, a, r, s_prime, prob_a, done = transition
 
-                self.policy_optimizer.zero_grad()
-                policy_loss.backward()
-                self.policy_optimizer.step()
+                    s_lst.append(s)
+                    a_lst.append([a])
+                    r_lst.append([r])
+                    s_prime_lst.append(s_prime)
+                    prob_a_lst.append([prob_a])
+                    done_mask = 0 if done else 1
+                    done_lst.append([done_mask])
 
-                # Update value network
-                value_loss = F.mse_loss(self.value_net(state), gae.detach())
+                s_batch.append(s_lst)
+                a_batch.append(a_lst)
+                r_batch.append(r_lst)
+                s_prime_batch.append(s_prime_lst)
+                prob_a_batch.append(prob_a_lst)
+                done_batch.append(done_lst)
 
-                self.value_optimizer.zero_grad()
-                value_loss.backward()
-                self.value_optimizer.step()
+            mini_batch = (
+                torch.tensor(s_batch, dtype=torch.float),
+                torch.tensor(a_batch, dtype=torch.float),
+                torch.tensor(r_batch, dtype=torch.float),
+                torch.tensor(s_prime_batch, dtype=torch.float),
+                torch.tensor(done_batch, dtype=torch.float),
+                torch.tensor(prob_a_batch, dtype=torch.float),
+            )
+            data.append(mini_batch)
 
-    def compute_gae(self, state, reward, next_state, done):
-        values = torch.FloatTensor(state).to(DEVICE)
-        next_values = torch.FloatTensor(next_state).to(DEVICE)
-        reward = torch.FloatTensor(reward).unsqueeze(1).to(DEVICE)
-        done = torch.FloatTensor(done).unsqueeze(1).to(DEVICE)
+        return data
 
-        gae = 0.0
-        returns = []
-        for step in reversed(range(len(reward))):
-            delta = reward[step] + self.gamma * next_values[step] * (1 - done[step]) - values[step]
-            gae = delta + self.gamma * self.tau * (1 - done[step]) * gae
-            returns.insert(0, gae + values[step])
-        return torch.stack(returns)
+    def calc_advantage(self, data):
+        data_with_adv = []
+        for mini_batch in data:
+            s, a, r, s_prime, done_mask, old_log_prob = mini_batch
+            with torch.no_grad():
+                td_target = r + self.gamma * self.model.v(s_prime) * done_mask
+                delta = td_target - self.model.v(s)
+            delta = delta.numpy()
 
-    def compute_advantage(self, state, gae):
-        values = torch.FloatTensor(state).to(DEVICE)
-        advantage = gae - values
-        return advantage
+            advantage_lst = []
+            advantage = 0.0
+            for delta_t in delta[::-1]:
+                advantage = self.gamma * self.tau * advantage + delta_t[0]
+                advantage_lst.append([advantage])
+            advantage_lst.reverse()
+            advantage = torch.tensor(advantage_lst, dtype=torch.float)
+            data_with_adv.append((s, a, r, s_prime, done_mask, old_log_prob, td_target, advantage))
 
-    def ppo_iter(self, mini_batch_size, states, actions, log_probs, returns, advantage):
-        batch_size = states.size(0)
-        for _ in range(batch_size // mini_batch_size):
-            rand_ids = np.random.randint(0, batch_size, mini_batch_size)
-            yield states[rand_ids], actions[rand_ids], log_probs[rand_ids], returns[rand_ids], advantage[rand_ids]
+        return data_with_adv
 
+    def train_net(self, data):
+        for i in range(self.n_epochs):
+            for mini_batch in data:
+                s, a, r, s_prime, done_mask, old_log_prob, td_target, advantage = mini_batch
+
+                log_prob = self.compute_log_action_prob(s, a)
+                ratio = torch.exp(log_prob - old_log_prob)
+
+                surr1 = ratio * advantage
+                surr2 = torch.clamp(ratio, 1 - self.clip_param, 1 + self.clip_param) * advantage
+                loss = -torch.min(surr1, surr2) + F.smooth_l1_loss(self.model.v(s), td_target)
+
+                self.optimizer.zero_grad()
+                loss.mean().backward()
+                self.optimizer.step()
 
 
 if __name__ == "__main__":
-    agent = PPO(env_name="Pendulum-v1")
-    agent.train(max_steps=1)
-    agent.test(n_episodes=3, render=True)
-
+    SEED = 777
+    set_seed(SEED)
+    ppo = PPO("Pendulum-v1", seed=SEED, log=False)
+    ppo.train(n_episodes=5000)
