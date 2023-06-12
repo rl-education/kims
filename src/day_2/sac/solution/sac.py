@@ -1,35 +1,54 @@
-"""SAC implementation for Pendulum-v1 environment.
-
-Reference:
-    - https://github.com/higgsfield/RL-Adventure-2/blob/master/7.soft%20actor-critic.ipynb
-"""
+"""SAC implementation for Pendulum-v1 environment."""
 
 import random
+from datetime import datetime
+from pathlib import Path
 
-import gymnasium as gym
+import gym
 import numpy as np
 import torch
-from torch import nn, optim
+from torch import Tensor, nn, optim
+from torch.utils.tensorboard import SummaryWriter
+from tqdm import trange
 
 USE_CUDA = torch.cuda.is_available()
 DEVICE = torch.device("cuda" if USE_CUDA else "cpu")
+TENSORBOARD_DIR = Path(__file__).parent.parent / "runs"
+
+
+def set_seed(seed: int = 777):
+    """Set seed for reproducibility."""
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if USE_CUDA:
+        torch.cuda.manual_seed(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
 
 
 class ReplayBuffer:
     """Replay buffer for SAC."""
 
-    def __init__(self, capacity):
+    def __init__(self, capacity: int):
         self.capacity = capacity
         self.buffer = []
         self.position = 0
 
-    def push(self, state, action, reward, next_state, done):
+    def push(
+        self,
+        state: np.ndarray,
+        action: np.ndarray,
+        reward: np.float64,
+        next_state: np.ndarray,
+        done: bool,
+    ):
         if len(self.buffer) < self.capacity:
             self.buffer.append(None)
         self.buffer[self.position] = (state, action, reward, next_state, done)
         self.position = (self.position + 1) % self.capacity
 
-    def sample(self, batch_size):
+    def sample(self, batch_size: int):
         batch = random.sample(self.buffer, batch_size)
         state, action, reward, next_state, done = map(np.stack, zip(*batch))
         return state, action, reward, next_state, done
@@ -52,7 +71,7 @@ class ValueNetwork(nn.Module):
             nn.Linear(hidden_dim, 1),
         )
 
-    def forward(self, state: torch.Tensor) -> torch.Tensor:
+    def forward(self, state: Tensor) -> Tensor:
         """Forward."""
         return self.layers(state)
 
@@ -71,13 +90,13 @@ class SoftQNetwork(nn.Module):
             nn.Linear(hidden_dim, 1),
         )
 
-    def forward(self, state: torch.Tensor, action: torch.Tensor) -> torch.Tensor:
+    def forward(self, state: Tensor, action: Tensor) -> Tensor:
         """Forward."""
         emb = torch.cat([state, action], dim=1)
         return self.layers(emb)
 
 
-class PolicyNetwork(nn.Module):
+class GaussianPolicyNetwork(nn.Module):
     """Multi layer perceptron network for deciding policy."""
 
     def __init__(
@@ -101,24 +120,13 @@ class PolicyNetwork(nn.Module):
         self.mean_linear = nn.Linear(hidden_dim, num_actions)
         self.log_std_linear = nn.Linear(hidden_dim, num_actions)
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, x: Tensor) -> tuple[Tensor, Tensor]:
         intermediate = self.layers(x)
 
         mean = self.mean_linear(intermediate)
         log_std = self.log_std_linear(intermediate)
         log_std = torch.clamp(log_std, self.log_std_min, self.log_std_max)
-        return mean, log_std
-
-
-class NormalizedActions(gym.ActionWrapper):
-    def action(self, action: np.ndarray):
-        low = self.action_space.low
-        high = self.action_space.high
-
-        action = low + (action + 1.0) * 0.5 * (high - low)
-        action = np.clip(action, low, high)
-
-        return action
+        return mean, log_std.exp()
 
 
 class SAC:
@@ -130,31 +138,33 @@ class SAC:
         hidden_dim: int = 256,
         learning_rate: float = 3e-4,
         replay_buffer_size: int = 1_000_000,
-        max_frames: int = 40_000,
-        max_steps=500,
-        batch_size: int = 128,
+        batch_size: int = 256,
         gamma: float = 0.99,
-        mean_lambda: float = 1e-3,
-        std_lambda: float = 1e-3,
-        z_lambda: float = 0.0,
         soft_tau: float = 1e-2,
         epsilon: float = 1e-6,
+        seed: int = 777,
+        log: bool = False,
     ):
-        self.env_name = env_name
-        self.env: gym.Env = NormalizedActions(gym.make(self.env_name))
-        state_dim = self.env.observation_space.shape[0]  # type: ignore
-        num_actions = self.env.action_space.shape[0]  # type: ignore
+        self.env = gym.wrappers.RescaleAction(gym.make(env_name), min_action=-1, max_action=1)
+        self.env.seed = seed
+        state_dim = self.env.observation_space.shape[0]
+        num_actions = self.env.action_space.shape[0]
 
         self.value_net = ValueNetwork(state_dim=state_dim, hidden_dim=hidden_dim).to(DEVICE)
         self.target_value_net = ValueNetwork(state_dim=state_dim, hidden_dim=hidden_dim).to(DEVICE)
-        self._update_target_value_net()
+        self.soft_target_update(
+            src_net=self.value_net,
+            target_net=self.target_value_net,
+            soft_tau=1.0,
+        )
 
         self.soft_q_net = SoftQNetwork(
             state_dim=state_dim,
             hidden_dim=hidden_dim,
             num_actions=num_actions,
         ).to(DEVICE)
-        self.policy_net = PolicyNetwork(
+
+        self.policy_net = GaussianPolicyNetwork(
             state_dim=state_dim,
             hidden_dim=hidden_dim,
             num_actions=num_actions,
@@ -169,79 +179,99 @@ class SAC:
 
         self.replay_buffer = ReplayBuffer(replay_buffer_size)
 
-        self.max_frames = max_frames
-        self.max_steps = max_steps
         self.batch_size = batch_size
         self.gamma = gamma
-        self.mean_lambda = mean_lambda
-        self.std_lambda = std_lambda
-        self.z_lambda = z_lambda
         self.soft_tau = soft_tau
         self.epsilon = epsilon
 
-    def _update_target_value_net(self, soft_tau: float = 1.0) -> None:
-        for target_param, param in zip(self.target_value_net.parameters(), self.value_net.parameters()):
-            data = target_param.data * (1.0 - soft_tau) + param.data * soft_tau
-            target_param.data.copy_(data)
+        self.log = log
+        if self.log:
+            self.logger = SummaryWriter(
+                log_dir=TENSORBOARD_DIR / f"sac-pendulum-{datetime.now().strftime('%Y%m%d%H%M%S')}",
+            )
 
-    def train(self) -> None:
-        frame_idx = 0
-        rewards = []
+    def train(self, max_steps: int) -> None:
+        """Train the agent.
 
-        while frame_idx < self.max_frames:
-            state, _ = self.env.reset()
-            episode_reward = 0
+        Notes:
+            1. The agent execute one step at a time.
+            2. Store the transition to replay buffer.
+            3. If the replay buffer has transition more than buffer_size, update the network with batch size.
+        """
+        progress_bar = trange(max_steps)
+        state = self.env.reset()
+        returns = 0.0
+        episode_idx = 0
 
-            for _ in range(self.max_steps):
-                action = self.get_action(state)
-                next_state, reward, terminate, truncate, _ = self.env.step(action)
-                done = terminate or truncate
+        for step in progress_bar:
+            action = self.select_action(state)
+            next_state, reward, done, _ = self.env.step(action)
+            self.replay_buffer.push(state, action, reward, next_state, done)
 
-                self.replay_buffer.push(state, action, reward, next_state, done)
-                if len(self.replay_buffer) > self.batch_size:
-                    self.soft_q_update()
+            # Update if replay buffer has enough transitions
+            if len(self.replay_buffer) > self.batch_size:
+                self.sac_update()
 
-                state = next_state
-                episode_reward += float(reward)
-                frame_idx += 1
-
-                if done:
-                    break
-            rewards.append(episode_reward)
-            print(episode_reward)
-
-    def test(self, render: bool = False) -> float:
-        """."""
-        render_mode = "human" if render else None
-        env = gym.make(self.env_name, render_mode=render_mode)
-        state, _ = env.reset()
-        done = False
-        total_reward = 0.0
-        while not done:
-            action = self.get_action(state=state)
-            next_state, reward, terminate, truncate, _ = env.step(action)
-            done = terminate or truncate
             state = next_state
-            total_reward += float(reward)
+            returns += float(reward)
 
-        return total_reward
+            # Log if episode ends
+            if done:
+                progress_bar.set_description(
+                    f"[TRAIN] Episode {episode_idx} ({step} steps) reward: {returns:.02f}",
+                )
+                state = self.env.reset()
+                returns = 0.0
+                episode_idx += 1
 
-    def get_action(self, state: np.ndarray) -> np.ndarray:
-        """Get action."""
+    def test(self, n_episodes: int, render: bool = False) -> None:
+        """Test agent."""
+        state = self.env.reset()
+        returns = 0.0
+        done = False
+        for episode_idx in range(n_episodes):
+            while not done:
+                if render:
+                    self.env.render(mode="human")
+
+                action = self.select_action(state=state)
+                next_state, reward, done, _ = self.env.step(action)
+                state = next_state
+                returns += float(reward)
+            if self.log:
+                self.logger.add_scalar("reward", returns, episode_idx)
+            print(f"[TEST] Episode {episode_idx} reward: {returns}")
+
+    def select_action(self, state: np.ndarray) -> np.ndarray:
+        """Select action.
+
+        Notes:
+            1. Convert state to tensor.
+            2. Get mean and std from policy network.
+            3. Sample action from normal distribution.
+            4. Clip action with range [-1.0, 1.0].
+        """
         state_tensor = torch.FloatTensor(state).unsqueeze(0).to(DEVICE)
-        mean, log_std = self.policy_net(state_tensor)
-        std = log_std.exp()
+        mean, std = self.policy_net(state_tensor)
 
         normal = torch.distributions.Normal(mean, std)
         z = normal.sample()
         action = torch.tanh(z)
         return action.detach().cpu().numpy()[0]
 
-    def evaluate(
+    def compute_log_action_prob(
         self,
-        state: torch.Tensor,
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-        """Evalute."""
+        state: Tensor,
+    ) -> tuple[Tensor, Tensor]:
+        """Compute action and its log probability.
+
+        Notes:
+            1. Convert state to tensor.
+            2. Get mean and std from policy network.
+            3. Sample action from normal distribution.
+            4. Clip action with range [-1.0, 1.0].
+        """
+
         mean, log_std = self.policy_net(state)
         std = log_std.exp()
 
@@ -252,9 +282,9 @@ class SAC:
         log_prob = normal.log_prob(z) - torch.log(1 - action.pow(2) + self.epsilon)
         log_prob = log_prob.sum(-1, keepdim=True)
 
-        return action, log_prob, z, mean, log_std
+        return action, log_prob
 
-    def soft_q_update(self) -> None:
+    def sac_update(self) -> None:
         """Update network parameters."""
         state, action, reward, next_state, done = self.replay_buffer.sample(self.batch_size)
 
@@ -264,43 +294,79 @@ class SAC:
         reward = torch.FloatTensor(reward).unsqueeze(1).to(DEVICE)
         done = torch.FloatTensor(np.float32(done)).unsqueeze(1).to(DEVICE)
 
+        self.update_soft_q_net(state, action, reward, next_state, done)
+        self.update_value_net(state)
+        self.update_policy_net(state)
+
+        self.soft_target_update(
+            src_net=self.value_net,
+            target_net=self.target_value_net,
+            soft_tau=self.soft_tau,
+        )
+
+    def update_soft_q_net(
+        self,
+        state: Tensor,
+        action: Tensor,
+        reward: Tensor,
+        next_state: Tensor,
+        done: Tensor,
+    ) -> None:
+        """Update soft q network parameters."""
         expected_q_value = self.soft_q_net(state, action)
-        expected_value = self.value_net(state)
-        new_action, log_prob, z, mean, log_std = self.evaluate(state)
 
         target_value = self.target_value_net(next_state)
         next_q_value = reward + (1 - done) * self.gamma * target_value
         q_value_loss = self.soft_q_criterion(expected_q_value, next_q_value.detach())
 
-        expected_new_q_value = self.soft_q_net(state, new_action)
-        next_value = expected_new_q_value - log_prob
-        value_loss = self.value_criterion(expected_value, next_value.detach())
-
-        log_prob_target = expected_new_q_value - expected_value
-        policy_loss = (log_prob * (log_prob - log_prob_target).detach()).mean()
-
-        mean_loss = self.mean_lambda * mean.pow(2).mean()
-        std_loss = self.std_lambda * log_std.pow(2).mean()
-        z_loss = self.z_lambda * z.pow(2).sum(1).mean()
-
-        policy_loss += mean_loss + std_loss + z_loss
-
         self.soft_q_optimizer.zero_grad()
         q_value_loss.backward()
         self.soft_q_optimizer.step()
+
+    def update_value_net(self, state: Tensor) -> None:
+        """Update value network parameters."""
+        expected_value = self.value_net(state)
+        new_action, log_prob = self.compute_log_action_prob(state)
+        expected_new_q_value = self.soft_q_net(state, new_action)
+        next_value = expected_new_q_value - log_prob
+        value_loss = self.value_criterion(expected_value, next_value.detach())
 
         self.value_optimizer.zero_grad()
         value_loss.backward()
         self.value_optimizer.step()
 
+    def update_policy_net(self, state: Tensor) -> None:
+        """Update policy network parameters."""
+        new_action, log_prob = self.compute_log_action_prob(state)
+
+        expected_new_q_value = self.soft_q_net(state, new_action)
+        expected_value = self.value_net(state)
+        log_prob_target = expected_new_q_value - expected_value
+        policy_loss = (log_prob * (log_prob - log_prob_target).detach()).mean()
+
         self.policy_optimizer.zero_grad()
         policy_loss.backward()
         self.policy_optimizer.step()
 
-        self._update_target_value_net(soft_tau=self.soft_tau)
+    def soft_target_update(
+        self,
+        src_net: nn.Module,
+        target_net: nn.Module,
+        soft_tau: float = 1.0,
+    ) -> None:
+        """Soft update the target network parameters.
+
+        Notes:
+            target = (1 - soft_tau) * target + soft_tau * src
+        """
+        for param, target_param in zip(src_net.parameters(), target_net.parameters()):
+            data = target_param.data * (1.0 - soft_tau) + param.data * soft_tau
+            target_param.data.copy_(data)
 
 
 if __name__ == "__main__":
-    sac = SAC(env_name="Pendulum-v1")
-    sac.train()
-    print(sac.test(render=True))
+    SEED = 777
+    set_seed(seed=SEED)
+    sac = SAC(env_name="Pendulum-v1", log=False, seed=SEED)
+    sac.train(max_steps=12_000)
+    sac.test(n_episodes=3, render=True)
