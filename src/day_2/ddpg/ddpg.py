@@ -1,7 +1,7 @@
 """DDPG implementation for Pendulum-v1 environment.
 
 Reference:
-    - https://github.com/higgsfield/RL-Adventure-2/blob/master/7.soft%20actor-critic.ipynb
+    - https://github.com/higgsfield/RL-Adventure-2/blob/master/7.soft%20policy-value.ipynb
 """
 
 import random
@@ -114,8 +114,8 @@ class DDPG:
         self,
         env_name: str,
         hidden_dim: int = 256,
-        critic_learning_rate: float = 1e-3,
-        actor_learning_rate: float = 1e-4,
+        value_learning_rate: float = 1e-3,
+        policy_learning_rate: float = 1e-4,
         replay_buffer_size: int = 1_000_000,
         soft_tau: float = 1e-2,
         batch_size: int = 256,
@@ -130,36 +130,36 @@ class DDPG:
         num_actions = self.env.action_space.shape[0]
         self.action_noise = 0.1
 
-        self.critic_net = QNetwork(
+        self.value_net = QNetwork(
             state_dim=state_dim,
             hidden_dim=hidden_dim,
             num_actions=num_actions,
         ).to(DEVICE)
-        self.target_critic_net = QNetwork(
-            state_dim=state_dim,
-            hidden_dim=hidden_dim,
-            num_actions=num_actions,
-        ).to(DEVICE)
-
-        self.actor_net = DeterministicPolicyNetwork(
+        self.target_value_net = QNetwork(
             state_dim=state_dim,
             hidden_dim=hidden_dim,
             num_actions=num_actions,
         ).to(DEVICE)
 
-        self.target_actor_net = DeterministicPolicyNetwork(
+        self.policy_net = DeterministicPolicyNetwork(
             state_dim=state_dim,
             hidden_dim=hidden_dim,
             num_actions=num_actions,
         ).to(DEVICE)
 
-        self.soft_target_update(src_net=self.critic_net, target_net=self.target_critic_net)
-        self.soft_target_update(src_net=self.actor_net, target_net=self.target_actor_net)
+        self.target_policy_net = DeterministicPolicyNetwork(
+            state_dim=state_dim,
+            hidden_dim=hidden_dim,
+            num_actions=num_actions,
+        ).to(DEVICE)
 
-        self.critic_loss_func = nn.MSELoss()
+        self.soft_target_update(src_net=self.value_net, target_net=self.target_value_net)
+        self.soft_target_update(src_net=self.policy_net, target_net=self.target_policy_net)
 
-        self.critic_optimizer = optim.Adam(self.critic_net.parameters(), lr=critic_learning_rate)
-        self.actor_optimizer = optim.Adam(self.actor_net.parameters(), lr=actor_learning_rate)
+        self.value_loss_func = nn.MSELoss()
+
+        self.value_optimizer = optim.Adam(self.value_net.parameters(), lr=value_learning_rate)
+        self.policy_optimizer = optim.Adam(self.policy_net.parameters(), lr=policy_learning_rate)
 
         self.replay_buffer = ReplayBuffer(replay_buffer_size)
 
@@ -231,7 +231,7 @@ class DDPG:
 
         Notes:
             1. Convert state to tensor.
-            2. Get action from actor network.
+            2. Get action from policy network.
             3. Add noise to action.
             4. Clip action to [-1.0, 1.0].
         """
@@ -243,10 +243,10 @@ class DDPG:
 
         Notes:
             1. Sample a batch of transitions from replay buffer.
-            2. Compute the actor loss.
-            2. Compute the critic loss.
-            3. Update the actor network.
-            4. Update the critic network.
+            2. Compute the policy loss.
+            2. Compute the value loss.
+            3. Update the policy network.
+            4. Update the value network.
             5. Update the target networks.
         """
         # Sample a batch of transitions from replay buffer
@@ -258,25 +258,25 @@ class DDPG:
         reward = torch.FloatTensor(reward).unsqueeze(1).to(DEVICE)
         done = torch.FloatTensor(np.float32(done)).unsqueeze(1).to(DEVICE)
 
-        self.update_actor_network(state)
-        self.update_critic_network(state, action, next_state, reward, done)
+        self.update_policy_network(state)
+        self.update_value_network(state, action, next_state, reward, done)
 
         # Soft target update
         # TODO 2: Update soft target update
 
-    def update_actor_network(self, state: Tensor) -> None:
-        """Update actor network.
+    def update_policy_network(self, state: Tensor) -> None:
+        """Update policy network.
 
         Notes:
-            actor_loss: -Q(s, pi(s))
+            policy_loss: -Q(s, pi(s))
         """
-        # TODO 3: Update actor network
+        # TODO 3: Update policy network
 
-        self.actor_optimizer.zero_grad()
-        actor_loss.backward()
-        self.actor_optimizer.step()
+        self.policy_optimizer.zero_grad()
+        policy_loss.backward()
+        self.policy_optimizer.step()
 
-    def update_critic_network(
+    def update_value_network(
         self,
         state: Tensor,
         action: Tensor,
@@ -284,21 +284,21 @@ class DDPG:
         reward: Tensor,
         done: Tensor,
     ) -> None:
-        """Update critic network.
+        """Update value network.
 
         Notes:
-            critic_loss: (td_target - Q(s, a))^2
+            value_loss: (td_target - Q(s, a))^2
             td_target: r + gamma * Q'(s', pi'(s'))
         """
         # Compute td target
         # TODO 4: Compute td target
 
-        # Compute critic loss
-        # TODO 5: Compute critic_loss
+        # Compute value loss
+        # TODO 5: Compute value_loss
 
-        self.critic_optimizer.zero_grad()
-        critic_loss.backward()
-        self.critic_optimizer.step()
+        self.value_optimizer.zero_grad()
+        value_loss.backward()
+        self.value_optimizer.step()
 
     def soft_target_update(
         self,
