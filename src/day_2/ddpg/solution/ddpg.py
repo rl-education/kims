@@ -1,8 +1,4 @@
-"""DDPG implementation for Pendulum-v1 environment.
-
-Reference:
-    - https://github.com/higgsfield/RL-Adventure-2/blob/master/7.soft%20policy-value.ipynb
-"""
+"""DDPG implementation for Pendulum-v1 environment."""
 
 import random
 from datetime import datetime
@@ -208,7 +204,6 @@ class DDPG:
                 state = self.env.reset()
                 returns = 0.0
                 episode_idx += 1
-            step += 1
 
     def test(self, n_episodes: int, render: bool = False) -> None:
         """Test agent."""

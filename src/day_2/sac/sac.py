@@ -1,4 +1,4 @@
-"""DDPG implementation for Pendulum-v1 environment."""
+"""SAC implementation for Pendulum-v1 environment."""
 
 import random
 from datetime import datetime
@@ -43,14 +43,12 @@ class ReplayBuffer:
         next_state: np.ndarray,
         done: bool,
     ):
-        """Push a transition to the buffer."""
         if len(self.buffer) < self.capacity:
             self.buffer.append(None)
         self.buffer[self.position] = (state, action, reward, next_state, done)
         self.position = (self.position + 1) % self.capacity
 
     def sample(self, batch_size: int):
-        """Sample a batch of transitions from the buffer."""
         batch = random.sample(self.buffer, batch_size)
         state, action, reward, next_state, done = map(np.stack, zip(*batch))
         return state, action, reward, next_state, done
@@ -59,8 +57,27 @@ class ReplayBuffer:
         return len(self.buffer)
 
 
-class QNetwork(nn.Module):
+class ValueNetwork(nn.Module):
     """Multi layer perceptron network for predicting state value."""
+
+    def __init__(self, state_dim: int, hidden_dim: int):
+        super().__init__()
+
+        self.layers = nn.Sequential(
+            nn.Linear(state_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, 1),
+        )
+
+    def forward(self, state: Tensor) -> Tensor:
+        """Forward."""
+        return self.layers(state)
+
+
+class SoftQNetwork(nn.Module):
+    """Multi layer perceptron network for predicting action value."""
 
     def __init__(self, state_dim: int, hidden_dim: int, num_actions: int):
         super().__init__()
@@ -79,7 +96,7 @@ class QNetwork(nn.Module):
         return self.layers(emb)
 
 
-class DeterministicPolicyNetwork(nn.Module):
+class GaussianPolicyNetwork(nn.Module):
     """Multi layer perceptron network for deciding policy."""
 
     def __init__(
@@ -87,86 +104,90 @@ class DeterministicPolicyNetwork(nn.Module):
         state_dim: int,
         hidden_dim: int,
         num_actions: int,
+        log_std_range: tuple[int, int] = (-20, 2),
     ):
         super().__init__()
+
+        self.log_std_min, self.log_std_max = log_std_range
 
         self.layers = nn.Sequential(
             nn.Linear(state_dim, hidden_dim),
             nn.ReLU(),
             nn.Linear(hidden_dim, hidden_dim),
             nn.ReLU(),
-            nn.Linear(hidden_dim, num_actions),
-            nn.Tanh(),
         )
 
+        self.mean_linear = nn.Linear(hidden_dim, num_actions)
+        self.log_std_linear = nn.Linear(hidden_dim, num_actions)
+
     def forward(self, x: Tensor) -> tuple[Tensor, Tensor]:
-        return self.layers(x)
+        intermediate = self.layers(x)
+
+        mean = self.mean_linear(intermediate)
+        log_std = self.log_std_linear(intermediate)
+        log_std = torch.clamp(log_std, self.log_std_min, self.log_std_max)
+        return mean, log_std.exp()
 
 
-class DDPG:
-    """Deep deterministic policy gradient method."""
+class SAC:
+    """Soft actor critic method."""
 
     def __init__(
         self,
         env_name: str,
         hidden_dim: int = 256,
-        value_learning_rate: float = 1e-3,
-        policy_learning_rate: float = 1e-4,
+        learning_rate: float = 3e-4,
         replay_buffer_size: int = 1_000_000,
-        soft_tau: float = 1e-2,
         batch_size: int = 256,
         gamma: float = 0.99,
+        soft_tau: float = 1e-2,
+        epsilon: float = 1e-6,
         seed: int = 777,
         log: bool = False,
     ):
-        self.env: gym.Env = gym.wrappers.RescaleAction(gym.make(env_name), -1.0, 1.0)
-        self.env.seed(seed)
-
+        self.env = gym.wrappers.RescaleAction(gym.make(env_name), min_action=-1, max_action=1)
+        self.env.seed = seed
         state_dim = self.env.observation_space.shape[0]
         num_actions = self.env.action_space.shape[0]
-        self.action_noise = 0.1
 
-        self.value_net = QNetwork(
-            state_dim=state_dim,
-            hidden_dim=hidden_dim,
-            num_actions=num_actions,
-        ).to(DEVICE)
-        self.target_value_net = QNetwork(
-            state_dim=state_dim,
-            hidden_dim=hidden_dim,
-            num_actions=num_actions,
-        ).to(DEVICE)
+        self.value_net = ValueNetwork(state_dim=state_dim, hidden_dim=hidden_dim).to(DEVICE)
+        self.target_value_net = ValueNetwork(state_dim=state_dim, hidden_dim=hidden_dim).to(DEVICE)
+        self.soft_target_update(
+            src_net=self.value_net,
+            target_net=self.target_value_net,
+            soft_tau=1.0,
+        )
 
-        self.policy_net = DeterministicPolicyNetwork(
-            state_dim=state_dim,
-            hidden_dim=hidden_dim,
-            num_actions=num_actions,
-        ).to(DEVICE)
-
-        self.target_policy_net = DeterministicPolicyNetwork(
+        self.soft_q_net = SoftQNetwork(
             state_dim=state_dim,
             hidden_dim=hidden_dim,
             num_actions=num_actions,
         ).to(DEVICE)
 
-        self.soft_target_update(src_net=self.value_net, target_net=self.target_value_net)
-        self.soft_target_update(src_net=self.policy_net, target_net=self.target_policy_net)
+        self.policy_net = GaussianPolicyNetwork(
+            state_dim=state_dim,
+            hidden_dim=hidden_dim,
+            num_actions=num_actions,
+        ).to(DEVICE)
 
-        self.value_loss_func = nn.MSELoss()
+        self.value_criterion = nn.MSELoss()
+        self.soft_q_criterion = nn.MSELoss()
 
-        self.value_optimizer = optim.Adam(self.value_net.parameters(), lr=value_learning_rate)
-        self.policy_optimizer = optim.Adam(self.policy_net.parameters(), lr=policy_learning_rate)
+        self.value_optimizer = optim.Adam(self.value_net.parameters(), lr=learning_rate)
+        self.soft_q_optimizer = optim.Adam(self.soft_q_net.parameters(), lr=learning_rate)
+        self.policy_optimizer = optim.Adam(self.policy_net.parameters(), lr=learning_rate)
 
         self.replay_buffer = ReplayBuffer(replay_buffer_size)
 
         self.batch_size = batch_size
         self.gamma = gamma
         self.soft_tau = soft_tau
+        self.epsilon = epsilon
 
         self.log = log
         if self.log:
             self.logger = SummaryWriter(
-                log_dir=TENSORBOARD_DIR / f"dddg-pendulum-{datetime.now().strftime('%Y%m%d-%H%M%S')}",
+                log_dir=TENSORBOARD_DIR / f"sac-pendulum-{datetime.now().strftime('%Y%m%d%H%M%S')}",
             )
 
     def train(self, max_steps: int) -> None:
@@ -179,7 +200,7 @@ class DDPG:
         """
         progress_bar = trange(max_steps)
         state = self.env.reset()
-        returns = 0
+        returns = 0.0
         episode_idx = 0
 
         for step in progress_bar:
@@ -189,7 +210,7 @@ class DDPG:
 
             # Update if replay buffer has enough transitions
             if len(self.replay_buffer) > self.batch_size:
-                self.ddpg_update()
+                self.sac_update()
 
             state = next_state
             returns += float(reward)
@@ -226,25 +247,44 @@ class DDPG:
 
         Notes:
             1. Convert state to tensor.
-            2. Get action from policy network.
-            3. Add noise to action.
-            4. Clip action to [-1.0, 1.0].
+            2. Get mean and std from policy network.
+            3. Sample action from normal distribution.
+            4. Clip action with range [-1.0, 1.0].
         """
-        # TODO 1: Select action
-        return action
+        state_tensor = torch.FloatTensor(state).unsqueeze(0).to(DEVICE)
+        mean, std = self.policy_net(state_tensor)
 
-    def ddpg_update(self) -> None:
-        """Update network parameters.
+        normal = torch.distributions.Normal(mean, std)
+        z = normal.sample()
+        action = torch.tanh(z)
+        return action.detach().cpu().numpy()[0]
+
+    def compute_log_action_prob(
+        self,
+        state: Tensor,
+    ) -> tuple[Tensor, Tensor]:
+        """Compute action and its log probability.
 
         Notes:
-            1. Sample a batch of transitions from replay buffer.
-            2. Compute the policy loss.
-            2. Compute the value loss.
-            3. Update the policy network.
-            4. Update the value network.
-            5. Update the target networks.
+            1. Convert state to tensor.
+            2. Get mean and std from policy network.
+            3. Sample action from normal distribution.
+            4. Clip action with range [-1.0, 1.0].
         """
-        # Sample a batch of transitions from replay buffer
+        mean, log_std = self.policy_net(state)
+        std = log_std.exp()
+
+        normal = torch.distributions.Normal(mean, std)
+        z = normal.sample()
+        action = torch.tanh(z)
+
+        log_prob = normal.log_prob(z) - torch.log(1 - action.pow(2) + self.epsilon)
+        log_prob = log_prob.sum(-1, keepdim=True)
+
+        return action, log_prob
+
+    def sac_update(self) -> None:
+        """Update network parameters."""
         state, action, reward, next_state, done = self.replay_buffer.sample(self.batch_size)
 
         state = torch.FloatTensor(state).to(DEVICE)
@@ -253,47 +293,74 @@ class DDPG:
         reward = torch.FloatTensor(reward).unsqueeze(1).to(DEVICE)
         done = torch.FloatTensor(np.float32(done)).unsqueeze(1).to(DEVICE)
 
-        self.update_policy_network(state)
-        self.update_value_network(state, action, next_state, reward, done)
+        self.update_soft_q_net(state, action, reward, next_state, done)
+        self.update_value_net(state)
+        self.update_policy_net(state)
 
-        # Soft target update
-        # TODO 2: Update soft target update
+        self.soft_target_update(
+            src_net=self.value_net,
+            target_net=self.target_value_net,
+            soft_tau=self.soft_tau,
+        )
 
-    def update_policy_network(self, state: Tensor) -> None:
-        """Update policy network.
-
-        Notes:
-            policy_loss: -Q(s, pi(s))
-        """
-        # TODO 3: Update policy network
-
-        self.policy_optimizer.zero_grad()
-        policy_loss.backward()
-        self.policy_optimizer.step()
-
-    def update_value_network(
+    def update_soft_q_net(
         self,
         state: Tensor,
         action: Tensor,
-        next_state: Tensor,
         reward: Tensor,
+        next_state: Tensor,
         done: Tensor,
     ) -> None:
-        """Update value network.
+        """Update soft q network parameters.
 
         Notes:
-            value_loss: (td_target - Q(s, a))^2
-            td_target: r + gamma * Q'(s', pi'(s'))
+            1. Compute expected q value.
+            2. Compute target q value.
+                Next q value: reward + (1 - done) * gamma * target_value
+            3. Compute soft q loss.
+                Soft q loss: (expected q value - next q value) ** 2
+            4. Update soft q network parameters.
         """
-        # Compute td target
-        # TODO 4: Compute td target
+        # TODO 1: Compute soft q loss
 
-        # Compute value loss
-        # TODO 5: Compute value_loss
+        self.soft_q_optimizer.zero_grad()
+        q_value_loss.backward()
+        self.soft_q_optimizer.step()
+
+    def update_value_net(self, state: Tensor) -> None:
+        """Update value network parameters.
+
+        Notes:
+            1. Compute expected value.
+            2. Compute next value.
+                Next value: expected new q value - log probability
+            3. Compute value loss.
+                Value loss: (expected value - next value) ** 2
+            4. Update value network parameters.
+        """
+        # TODO 2: Compute value loss
 
         self.value_optimizer.zero_grad()
         value_loss.backward()
         self.value_optimizer.step()
+
+    def update_policy_net(self, state: Tensor) -> None:
+        """Update policy network parameters.
+
+        Notes:
+            1. Compute expected new q value.
+            2. Compute expected value.
+            3. Compute log probability target.
+                Log probability target: expected new q value - expected value
+            4. Compute policy loss.
+                Policy loss: log probability * (log probability - log probability target)
+            5. Update policy network parameters.
+        """
+        # TODO 3: Compute policy loss
+
+        self.policy_optimizer.zero_grad()
+        policy_loss.backward()
+        self.policy_optimizer.step()
 
     def soft_target_update(
         self,
@@ -306,12 +373,14 @@ class DDPG:
         Notes:
             target = (1 - soft_tau) * target + soft_tau * src
         """
-        # TODO 6: Soft update the target network parameters
+        for param, target_param in zip(src_net.parameters(), target_net.parameters()):
+            data = target_param.data * (1.0 - soft_tau) + param.data * soft_tau
+            target_param.data.copy_(data)
 
 
 if __name__ == "__main__":
     SEED = 777
-    set_seed(SEED)
-    ddpg = DDPG(env_name="Pendulum-v1", log=False, batch_size=256, seed=SEED)
-    ddpg.train(max_steps=12_000)
-    ddpg.test(n_episodes=1, render=True)
+    set_seed(seed=SEED)
+    sac = SAC(env_name="Pendulum-v1", log=False, seed=SEED)
+    sac.train(max_steps=12_000)
+    sac.test(n_episodes=3, render=True)

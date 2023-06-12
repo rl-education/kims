@@ -271,7 +271,6 @@ class SAC:
             3. Sample action from normal distribution.
             4. Clip action with range [-1.0, 1.0].
         """
-
         mean, log_std = self.policy_net(state)
         std = log_std.exp()
 
@@ -312,7 +311,16 @@ class SAC:
         next_state: Tensor,
         done: Tensor,
     ) -> None:
-        """Update soft q network parameters."""
+        """Update soft q network parameters.
+
+        Notes:
+            1. Compute expected q value.
+            2. Compute target q value.
+                Next q value: reward + (1 - done) * gamma * target_value
+            3. Compute soft q loss.
+                Soft q loss: (expected q value - next q value) ** 2
+            4. Update soft q network parameters.
+        """
         expected_q_value = self.soft_q_net(state, action)
 
         target_value = self.target_value_net(next_state)
@@ -324,7 +332,16 @@ class SAC:
         self.soft_q_optimizer.step()
 
     def update_value_net(self, state: Tensor) -> None:
-        """Update value network parameters."""
+        """Update value network parameters.
+
+        Notes:
+            1. Compute expected value.
+            2. Compute next value.
+                Next value: expected new q value - log probability
+            3. Compute value loss.
+                Value loss: (expected value - next value) ** 2
+            4. Update value network parameters.
+        """
         expected_value = self.value_net(state)
         new_action, log_prob = self.compute_log_action_prob(state)
         expected_new_q_value = self.soft_q_net(state, new_action)
@@ -336,7 +353,17 @@ class SAC:
         self.value_optimizer.step()
 
     def update_policy_net(self, state: Tensor) -> None:
-        """Update policy network parameters."""
+        """Update policy network parameters.
+
+        Notes:
+            1. Compute expected new q value.
+            2. Compute expected value.
+            3. Compute log probability target.
+                Log probability target: expected new q value - expected value
+            4. Compute policy loss.
+                Policy loss: log probability * (log probability - log probability target)
+            5. Update policy network parameters.
+        """
         new_action, log_prob = self.compute_log_action_prob(state)
 
         expected_new_q_value = self.soft_q_net(state, new_action)
