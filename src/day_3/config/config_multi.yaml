@@ -1,0 +1,29 @@
+# name of the experiment
+name: "multi_cartpole"
+
+# Task config file
+task_config_file: "cartpole.yaml"
+
+# Policy config file
+policy_config_file: "rl_games_ppo.yaml"
+
+## Device config
+device: "cuda"
+
+# test - if set, run policy in inference mode (requires setting checkpoint to load)
+test: False
+
+# used to set checkpoint path
+checkpoint: ""
+
+# application launch type
+# headless: launch without GUI
+# render: launch with local GUI
+# livestream: streams the GUI to the Omniverse Streaming Client
+# websocket: streams the GUI to http://<server_IP>:8211/streaming/client
+launch_type: "livestream"
+
+# number of actors
+# changing this might require changing the batch_size in the rlgames config
+# so that num_envs * horizon_length % mini_batch_size = 0
+num_envs: 512

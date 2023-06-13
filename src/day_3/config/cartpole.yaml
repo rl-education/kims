@@ -1,0 +1,13 @@
+name: "cartpole"
+cartpole_file: "cartpole.usda"
+add_ground_plane: True
+task:
+  num_envs: 100
+  env_spacing: 4.0
+  reset_dist: 2.9
+  max_effort: 400.0
+  max_episode_length: 1000
+
+  clip_observations: 10.0
+  clip_actions: 1.0
+  control_frequency_inv: 2 # 60 Hz

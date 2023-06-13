@@ -1,0 +1,25 @@
+# name of the experiment
+name: "single_cartpole"
+
+# Task config file
+task_config_file: "cartpole.yaml"
+
+# Policy config file
+policy_config_file: "sb3_ppo.yaml"
+
+## Device config
+device: "cuda"
+
+# test - if set, run policy in inference mode (requires setting checkpoint to load)
+test: False
+# used to set checkpoint path
+checkpoint: ""
+
+# application launch type
+# headless: launch without GUI
+# render: launch with local GUI
+# livestream: streams the GUI to the Omniverse Streaming Client
+# websocket: streams the GUI to http://<server_IP>:8211/streaming/client
+launch_type: "livestream"
+# number of actors (don't change this for this config)
+num_envs: 1

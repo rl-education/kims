@@ -24,12 +24,10 @@ def policy_evaluation(
             for a in dynamics[s]:
                 for trans_prob, next_obs, reward, _ in dynamics[s][a]:
                     ###
-                    # Solution 1:
+                    # Problem 1:
                     # Please write the code that computes the value prime V' of the policy π_k
                     # by solving the Bellman expectation equation
-                    value_prime[s][0] += (
-                        policy_table[s][a] * trans_prob * (reward + gamma * value_table[next_obs])
-                    )
+                    value_prime[s][0] += None
                     ###
 
         distance = np.max(np.abs(value_table - value_prime))
@@ -57,15 +55,15 @@ def policy_improvement(
         for a in dynamics[s]:
             for trans_prob, next_obs, reward, _ in dynamics[s][a]:
                 ###
-                # Solution 2:
+                # Problem 2:
                 # Please write the code to update the policy to π_{k+1}
-                q_table[s][a] += trans_prob * (reward + gamma * value_table[next_obs])
+                q_table[s][a] += None
                 ###
 
     ###
-    # Solution 3:
+    # Problem 3:
     # Please write the code to set to 1 the entry in the policy table that represents taking the action with the highest Q-value at the current state
-    policy_prime[np.arange(state_num), np.argmax(q_table, axis=1)] = 1
+    policy_prime[np.arange(state_num), None] = 1
     ###
     return policy_prime
 
