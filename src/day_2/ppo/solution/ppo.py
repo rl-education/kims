@@ -26,58 +26,6 @@ def set_seed(seed: int = 777):
     torch.backends.cudnn.benchmark = False
 
 
-class GaussianPolicyNetwork(nn.Module):
-    """Multi layer perceptron network for deciding policy."""
-
-    def __init__(
-        self,
-        state_dim: int,
-        hidden_dim: int,
-        action_dim: int,
-        log_std_range: tuple[int, int] = (-20, 2),
-    ):
-        super().__init__()
-
-        self.log_std_min, self.log_std_max = log_std_range
-
-        self.layers = nn.Sequential(
-            nn.Linear(state_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, hidden_dim),
-            nn.ReLU(),
-        )
-
-        self.mean_linear = nn.Linear(hidden_dim, action_dim)
-        self.log_std_linear = nn.Linear(hidden_dim, action_dim)
-
-    def forward(self, x: Tensor) -> tuple[Tensor, Tensor]:
-        intermediate = self.layers(x)
-
-        mean = self.mean_linear(intermediate)
-        log_std = self.log_std_linear(intermediate)
-        log_std = torch.clamp(log_std, self.log_std_min, self.log_std_max)
-        return mean, log_std.exp()
-
-
-class ValueNetwork(nn.Module):
-    """Multi layer perceptron network for predicting state value."""
-
-    def __init__(self, state_dim: int, hidden_dim: int):
-        super().__init__()
-
-        self.layers = nn.Sequential(
-            nn.Linear(state_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, 1),
-        )
-
-    def forward(self, state: Tensor) -> Tensor:
-        """Forward."""
-        return self.layers(state)
-
-
 class ActorCritic(nn.Module):
     def __init__(
         self,
@@ -99,17 +47,17 @@ class ActorCritic(nn.Module):
         self.log_std_layer = nn.Linear(hidden_dim, action_dim)
         self.value_layer = nn.Linear(hidden_dim, 1)
 
-    def pi(self, x):
-        x = self.layer(x)
-        mu = 2 * torch.tanh(self.mean_layer(x))
-        log_std = self.log_std_layer(x)
+    def policy(self, intermediate: Tensor):
+        intermediate = self.layer(intermediate)
+        mean = 2 * torch.tanh(self.mean_layer(intermediate))
+        log_std = self.log_std_layer(intermediate)
         log_std = torch.clamp(log_std, self.log_std_min, self.log_std_max)
-        return mu, log_std.exp()
+        return mean, log_std.exp()
 
-    def v(self, x):
-        x = self.layer(x)
-        v = self.value_layer(x)
-        return v
+    def value(self, x: Tensor):
+        intermediate = self.layer(x)
+        value = self.value_layer(intermediate)
+        return value
 
 
 class PPO:
@@ -122,13 +70,12 @@ class PPO:
         tau: float = 0.9,
         clip_param: float = 0.2,
         n_epochs: int = 10,
-        rollout_len: int = 3,
+        rollout_len: int = 1,
         batch_size=320,
         minibatch_size=32,
         seed: int = 777,
         log: bool = False,
     ):
-        # self.env = gym.wrappers.RescaleAction(gym.make(env_name), min_action=-1.0, max_action=1.0)
         self.env = gym.make(env_name)
         self.env.seed(seed)
 
@@ -155,133 +102,134 @@ class PPO:
                 log_dir=TENSORBOARD_DIR / f"ppo-pendulum-{datetime.now().strftime('%Y%m%d-%H%M%S')}",
             )
 
-    def train(self, n_episodes: int):
-        score = 0.0
-        print_interval = 20
-        batch = []
+    def train(self, max_steps: int):
+        """Train agent.
+
+        Notes:
+            1. Collect rollouts.
+            2. Compute advantage from rollouts.
+            3. Train network.
+        """
+        state = self.env.reset()
+        returns = 0.0
+        episode_idx = 0
+        rollouts = []
         rollout = []
+        done = False
 
-        for n_epi in range(n_episodes):
-            state = self.env.reset()
-            done = False
-            while not done:
-                for _ in range(self.rollout_len):
-                    action, log_prob = self.select_action(state)
-                    s_prime, r, done, info = self.env.step([action.item()])
+        progress_bar = trange(max_steps)
+        for step in progress_bar:
+            # Collect rollouts
+            for _ in range(self.rollout_len):
+                action, log_prob = self.select_action(state)
+                next_state, reward, done, _ = self.env.step([action.item()])
 
-                    rollout.append((state, action, r / 10.0, s_prime, log_prob.item(), done))
-                    if len(rollout) == self.rollout_len:
-                        batch.append(rollout)
-                        rollout = []
+                rollout.append((state, action, reward / 10.0, next_state, log_prob.item(), done))
+                if len(rollout) == self.rollout_len:
+                    rollouts.append(rollout)
+                    rollout = []
 
-                    state = s_prime
-                    score += r
+                state = next_state
+                returns += reward
 
-                if len(batch) == self.batch_size:
-                    batch = self.make_batch(batch)
-                    batch = self.calc_advantage(batch)
-                    self.train_net(batch)
-                    batch.clear()
+            if len(rollouts) == self.batch_size:
+                # Compute advantage from rollouts
+                batches = self.make_mini_batch(rollouts)
+                batches = self.compute_advantage(batches)
+                rollouts.clear()
 
-            if self.log:
-                self.logger.add_scalar("train/episode_reward", score, n_epi)
+                # Train network
+                self.train_net(batches)
 
-            if n_epi % print_interval == 0 and n_epi != 0:
-                print(
-                    "# of episode :{}, avg score : {:.1f}".format(
-                        n_epi,
-                        score / print_interval,
-                    ),
+            if done:
+                if self.log:
+                    self.logger.add_scalar("train/episode_reward", returns, episode_idx)
+                progress_bar.set_description(
+                    f"[TRAIN] Episode {episode_idx} ({step} steps) reward: {returns:.02f}",
                 )
-                score = 0.0
+
+                state = self.env.reset()
+                episode_idx += 1
+                returns = 0.0
 
         self.env.close()
 
     def select_action(self, state: np.ndarray) -> np.ndarray:
         """Select action."""
-        mu, std = self.model.pi(torch.from_numpy(state).float())
-        dist = torch.distributions.Normal(mu, std)
+        mean, std = self.model.policy(torch.from_numpy(state).float())
+        dist = torch.distributions.Normal(mean, std)
         action = dist.sample()
         log_action_prob = dist.log_prob(action)
         return action, log_action_prob
 
-    def compute_log_action_prob(self, state: np.ndarray, action: np.ndarray) -> Tensor:
+    def compute_log_action_prob(self, state: Tensor, action: Tensor) -> Tensor:
         """Compute log action probability."""
-        mu, std = self.model.pi(state)
-        dist = torch.distributions.Normal(mu, std)
+        mean, std = self.model.policy(state)
+        dist = torch.distributions.Normal(mean, std)
         log_action_prob = dist.log_prob(action)
         return log_action_prob
 
-    def make_batch(self, batch):
-        s_batch, a_batch, r_batch, s_prime_batch, prob_a_batch, done_batch = [], [], [], [], [], []
-        data = []
+    def make_mini_batch(self, rollouts):
+        states, actions, rewards, next_states, log_action_probs, dones = [], [], [], [], [], []
+        batch = []
 
         for _ in range(self.batch_size // self.minibatch_size):
             for _ in range(self.minibatch_size):
-                rollout = batch.pop()
-                s_lst, a_lst, r_lst, s_prime_lst, prob_a_lst, done_lst = [], [], [], [], [], []
+                rollout = rollouts.pop()
+                state, action, reward, next_state, log_action_prob, done = zip(*rollout)
 
-                for transition in rollout:
-                    s, a, r, s_prime, prob_a, done = transition
-
-                    s_lst.append(s)
-                    a_lst.append([a])
-                    r_lst.append([r])
-                    s_prime_lst.append(s_prime)
-                    prob_a_lst.append([prob_a])
-                    done_mask = 0 if done else 1
-                    done_lst.append([done_mask])
-
-                s_batch.append(s_lst)
-                a_batch.append(a_lst)
-                r_batch.append(r_lst)
-                s_prime_batch.append(s_prime_lst)
-                prob_a_batch.append(prob_a_lst)
-                done_batch.append(done_lst)
+                states.append(state)
+                actions.append(action)
+                rewards.append(reward)
+                next_states.append(next_state)
+                log_action_probs.append(log_action_prob)
+                dones.append(done)
 
             mini_batch = (
-                torch.tensor(s_batch, dtype=torch.float),
-                torch.tensor(a_batch, dtype=torch.float),
-                torch.tensor(r_batch, dtype=torch.float),
-                torch.tensor(s_prime_batch, dtype=torch.float),
-                torch.tensor(done_batch, dtype=torch.float),
-                torch.tensor(prob_a_batch, dtype=torch.float),
+                torch.FloatTensor(states),
+                torch.FloatTensor(actions).unsqueeze(1),
+                torch.FloatTensor(rewards).unsqueeze(1),
+                torch.FloatTensor(next_states),
+                torch.FloatTensor(dones).unsqueeze(1),
+                torch.FloatTensor(log_action_probs).unsqueeze(1),
             )
-            data.append(mini_batch)
+            batch.append(mini_batch)
 
-        return data
+        return batch
 
-    def calc_advantage(self, data):
-        data_with_adv = []
-        for mini_batch in data:
-            s, a, r, s_prime, done_mask, old_log_prob = mini_batch
+    def compute_advantage(self, batch):
+        with_advantage = []
+        for mini_batch in batch:
+            state, action, reward, next_state, done, old_log_action_prob = mini_batch
             with torch.no_grad():
-                td_target = r + self.gamma * self.model.v(s_prime) * done_mask
-                delta = td_target - self.model.v(s)
-            delta = delta.numpy()
+                td_target = reward + self.gamma * self.model.value(next_state) * (1 - done)
+                td_errors = td_target - self.model.value(state)
+            td_errors = td_errors.numpy()
 
-            advantage_lst = []
+            advantages = []
             advantage = 0.0
-            for delta_t in delta[::-1]:
-                advantage = self.gamma * self.tau * advantage + delta_t[0]
-                advantage_lst.append([advantage])
-            advantage_lst.reverse()
-            advantage = torch.tensor(advantage_lst, dtype=torch.float)
-            data_with_adv.append((s, a, r, s_prime, done_mask, old_log_prob, td_target, advantage))
+            for td_error in td_errors[::-1]:
+                advantage = self.gamma * self.tau * advantage + td_error[0]
+                advantages.append([advantage])
+            advantages.reverse()
+            advantage = torch.tensor(advantages, dtype=torch.float)
+            with_advantage.append(
+                (state, action, old_log_action_prob, td_target, advantage),
+            )
 
-        return data_with_adv
+        return with_advantage
 
-    def train_net(self, data):
-        for i in range(self.n_epochs):
-            for mini_batch in data:
-                s, a, r, s_prime, done_mask, old_log_prob, td_target, advantage = mini_batch
+    def train_net(self, batch):
+        for _ in range(self.n_epochs):
+            for mini_batch in batch:
+                state, action, old_log_action_prob, td_target, advantage = mini_batch
 
-                log_prob = self.compute_log_action_prob(s, a)
-                ratio = torch.exp(log_prob - old_log_prob)
+                log_prob = self.compute_log_action_prob(state, action)
+                ratio = torch.exp(log_prob - old_log_action_prob)
 
                 surr1 = ratio * advantage
                 surr2 = torch.clamp(ratio, 1 - self.clip_param, 1 + self.clip_param) * advantage
-                loss = -torch.min(surr1, surr2) + F.smooth_l1_loss(self.model.v(s), td_target)
+                loss = -torch.min(surr1, surr2) + F.smooth_l1_loss(self.model.value(state), td_target)
 
                 self.optimizer.zero_grad()
                 loss.mean().backward()
@@ -292,4 +240,4 @@ if __name__ == "__main__":
     SEED = 777
     set_seed(SEED)
     ppo = PPO("Pendulum-v1", seed=SEED, log=False)
-    ppo.train(n_episodes=5000)
+    ppo.train(max_steps=100_000)
