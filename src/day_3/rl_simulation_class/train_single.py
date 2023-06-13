@@ -1,3 +1,4 @@
+import random
 from pathlib import Path
 
 from rl_simulation_class.utils.config import Config, SB3Config, load_config
@@ -58,6 +59,7 @@ def train(config: Config, env: VecEnvBaseLivestream) -> None:
             max_grad_norm=config.policy_config.max_grad_norm,
             verbose=config.policy_config.verbose,
             tensorboard_log=config.policy_config.tensorboard_log,
+            seed=config.policy_config.seed,
         )
 
         model.learn(total_timesteps=config.policy_config.max_steps)
@@ -76,6 +78,9 @@ def main() -> None:
 
     config: Config = load_config(args.config_path, args.config_file)
     env = get_env(config)
+    # set seed
+    random.seed(config.seed)
+    env.seed(config.seed)
     train(config, env)
     env.close()
 

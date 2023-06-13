@@ -1,6 +1,6 @@
 name: rl-games
 params:
-  seed: 0
+  seed: 1234
 
   algo:
     name: a2c_continuous

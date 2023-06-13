@@ -1,6 +1,9 @@
 # name of the experiment
 name: "multi_cartpole"
 
+# seed for reproducibility
+seed: 1234
+
 # Task config file
 task_config_file: "cartpole.yaml"
 
