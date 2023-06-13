@@ -14,7 +14,7 @@ from tqdm import trange
 
 USE_CUDA = torch.cuda.is_available()
 DEVICE = torch.device("cuda" if USE_CUDA else "cpu")
-TENSORBOARD_DIR = Path(__file__).parent.parent.parent / "runs"
+TENSORBOARD_DIR = Path(__file__).parent.parent / "runs"
 
 
 def set_seed(seed: int = 777):
