@@ -28,7 +28,7 @@ def set_seed(seed: int = 777):
 
 
 class ReplayBuffer:
-    """Replay buffer for SAC."""
+    """Replay buffer for DDPG."""
 
     def __init__(self, capacity: int):
         self.capacity = capacity
