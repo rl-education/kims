@@ -155,7 +155,7 @@ class ActorCritic:
                     f"Episode {episode_idx} ({step} steps): Reward {returns:02f}",
                 )
                 if self.log:
-                    self.logger.add_scalar("train/_episode_reward", returns, episode_idx)
+                    self.logger.add_scalar("train/episode_reward", returns, episode_idx)
 
                 state = self.env.reset()
                 episode_idx += 1

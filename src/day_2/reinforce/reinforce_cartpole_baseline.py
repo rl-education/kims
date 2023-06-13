@@ -148,11 +148,12 @@ class REINFORCE:
         for episode_idx in progress_bar:
             episodes = [self.run_episode() for _ in range(self.batch_size)]
             batch = self.make_batch(episodes)
+            self.update_batch(batch)
 
             # Log metrics
             returns = sum(batch.rewards) / self.batch_size
             if self.log:
-                self.logger.add_scalar("train/_episode_reward", returns, episode_idx)
+                self.logger.add_scalar("train/episode_reward", returns, episode_idx)
             progress_bar.set_description(
                 f"Episode {episode_idx}: Reward {float(returns):02f}",
             )
@@ -255,6 +256,6 @@ class REINFORCE:
 if __name__ == "__main__":
     SEED = 777
     set_seed(SEED)
-    reinforce = REINFORCE(env_name="CartPole-v1", log=False, batch_size=4, seed=SEED)
+    reinforce = REINFORCE(env_name="CartPole-v1", log=True, batch_size=4, seed=SEED)
     reinforce.train(n_episodes=500)
     reinforce.test(n_episodes=1, render=True)

@@ -151,7 +151,7 @@ class REINFORCE:
             # Log metrics
             returns = sum(batch.rewards) / self.batch_size
             if self.log:
-                self.logger.add_scalar("train/_episode_reward", returns, episode_idx)
+                self.logger.add_scalar("train/episode_reward", returns, episode_idx)
             progress_bar.set_description(
                 f"Episode {episode_idx}: Reward {float(returns):02f}",
             )

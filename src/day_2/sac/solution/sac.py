@@ -218,6 +218,8 @@ class SAC:
                 progress_bar.set_description(
                     f"[TRAIN] Episode {episode_idx} ({step} steps) reward: {returns:.02f}",
                 )
+                if self.log:
+                    self.logger.add_scalar("train/episode_reward", returns, episode_idx)
                 state = self.env.reset()
                 returns = 0.0
                 episode_idx += 1
@@ -237,7 +239,7 @@ class SAC:
                 state = next_state
                 returns += float(reward)
             if self.log:
-                self.logger.add_scalar("reward", returns, episode_idx)
+                self.logger.add_scalar("test/episode_reward", returns, episode_idx)
             print(f"[TEST] Episode {episode_idx} reward: {returns}")
 
     def select_action(self, state: np.ndarray) -> np.ndarray:
@@ -390,6 +392,6 @@ class SAC:
 if __name__ == "__main__":
     SEED = 777
     set_seed(seed=SEED)
-    sac = SAC(env_name="Pendulum-v1", log=False, seed=SEED)
+    sac = SAC(env_name="Pendulum-v1", log=True, seed=SEED)
     sac.train(max_steps=12_000)
     sac.test(n_episodes=3, render=True)

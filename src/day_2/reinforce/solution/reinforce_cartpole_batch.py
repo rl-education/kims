@@ -131,7 +131,7 @@ class REINFORCE:
             return_per_episode = [sum(episode.rewards) for episode in episodes]
             returns = np.mean(return_per_episode)
             if self.log:
-                self.logger.add_scalar("train/_episode_reward", returns, episode_idx)
+                self.logger.add_scalar("train/episode_reward", returns, episode_idx)
             progress_bar.set_description(
                 f"Episode {episode_idx}: Reward {returns:02f}",
             )

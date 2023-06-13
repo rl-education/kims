@@ -130,7 +130,7 @@ class REINFORCE:
             return_per_episode = [sum(episode.rewards) for episode in episodes]
             returns = np.mean(return_per_episode)
             if self.log:
-                self.logger.add_scalar("train/_episode_reward", returns, episode_idx)
+                self.logger.add_scalar("train/episode_reward", returns, episode_idx)
             progress_bar.set_description(
                 f"Episode {episode_idx}: Reward {returns:02f}",
             )
@@ -206,4 +206,4 @@ if __name__ == "__main__":
     set_seed(SEED)
     reinforce = REINFORCE(env_name="CartPole-v1", log=True, seed=SEED, batch_size=4)
     reinforce.train(n_episodes=500)
-    reinforce.test(n_episodes=1, render=True)
+    reinforce.test(n_episodes=3, render=True)

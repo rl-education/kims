@@ -158,7 +158,24 @@ class PPO:
 
         self.env.close()
 
-    def select_action(self, state: np.ndarray) -> np.ndarray:
+    def test(self, n_episodes: int, render: bool):
+        """Test Agent."""
+        for episode_idx in range(n_episodes):
+            state = self.env.reset()
+            done = False
+            returns = 0.0
+            while not done:
+                if render:
+                    self.env.render()
+                action, _ = self.select_action(state)
+                state, reward, done, _ = self.env.step([action.item()])
+                returns += reward
+            if self.log:
+                self.logger.add_scalar("test/episode_reward", returns, episode_idx)
+            print(f"[TEST] Episode {episode_idx} reward: {returns:.02f}")
+        self.env.close()
+
+    def select_action(self, state: np.ndarray) -> tuple[Tensor, Tensor]:
         """Select action."""
         mean, std = self.model.policy(torch.from_numpy(state).float())
         dist = torch.distributions.Normal(mean, std)
@@ -250,5 +267,6 @@ class PPO:
 if __name__ == "__main__":
     SEED = 777
     set_seed(SEED)
-    ppo = PPO("Pendulum-v1", seed=SEED, log=False)
+    ppo = PPO("Pendulum-v1", seed=SEED, log=True)
     ppo.train(max_steps=100_000)
+    ppo.test(n_episodes=3, render=True)

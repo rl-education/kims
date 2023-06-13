@@ -185,8 +185,6 @@ class DDPG:
         for step in progress_bar:
             action = self.select_action(state)
             next_state, reward, done, _ = self.env.step(action)
-            print(type(state), type(action), type(reward), type(next_state), type(done))
-            exit()
             self.replay_buffer.push(state, action, reward, next_state, done)
 
             # Update if replay buffer has enough transitions
@@ -201,6 +199,8 @@ class DDPG:
                 progress_bar.set_description(
                     f"[TRAIN] Episode {episode_idx} ({step} steps) reward: {returns:.02f}",
                 )
+                if self.log:
+                    self.logger.add_scalar("train/episode_reward", returns, episode_idx)
                 state = self.env.reset()
                 returns = 0.0
                 episode_idx += 1
@@ -220,7 +220,7 @@ class DDPG:
                 state = next_state
                 returns += float(reward)
             if self.log:
-                self.logger.add_scalar("reward", returns, episode_idx)
+                self.logger.add_scalar("test/episode_reward", returns, episode_idx)
             print(f"[TEST] Episode {episode_idx} reward: {returns}")
 
     def select_action(self, state: np.ndarray) -> np.ndarray:
@@ -322,6 +322,6 @@ class DDPG:
 if __name__ == "__main__":
     SEED = 777
     set_seed(SEED)
-    ddpg = DDPG(env_name="Pendulum-v1", log=False, batch_size=256, seed=SEED)
+    ddpg = DDPG(env_name="Pendulum-v1", log=True, batch_size=256, seed=SEED)
     ddpg.train(max_steps=12_000)
-    ddpg.test(n_episodes=1, render=True)
+    ddpg.test(n_episodes=3, render=True)

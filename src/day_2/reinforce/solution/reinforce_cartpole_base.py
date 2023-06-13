@@ -125,7 +125,7 @@ class REINFORCE:
             # Log metrics
             progress_bar.set_description(f"Episode {episode_idx} reward: {sum(episode.rewards)}")
             if self.log:
-                self.logger.add_scalar("train/_episode_reward", sum(episode.rewards), episode_idx)
+                self.logger.add_scalar("train/episode_reward", sum(episode.rewards), episode_idx)
 
     def test(self, n_episodes: int = 1, render: bool = False) -> None:
         """Test agent."""

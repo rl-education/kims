@@ -124,7 +124,7 @@ class REINFORCE:
             # Log metrics
             progress_bar.set_description(f"Episode {episode_idx} reward: {sum(episode.rewards)}")
             if self.log:
-                self.logger.add_scalar("train/_episode_reward", sum(episode.rewards), episode_idx)
+                self.logger.add_scalar("train/episode_reward", sum(episode.rewards), episode_idx)
 
     def test(self, n_episodes: int = 1, render: bool = False) -> None:
         """Test agent."""
@@ -182,4 +182,4 @@ if __name__ == "__main__":
     set_seed(SEED)
     reinforce = REINFORCE(env_name="CartPole-v1", log=True, seed=SEED)
     reinforce.train(n_episodes=3000)
-    reinforce.test(n_episodes=1, render=True)
+    reinforce.test(n_episodes=3, render=True)
