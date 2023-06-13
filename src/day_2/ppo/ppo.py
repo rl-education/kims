@@ -12,7 +12,7 @@ from tqdm import trange
 
 USE_CUDA = torch.cuda.is_available()
 DEVICE = torch.device("cuda" if USE_CUDA else "cpu")
-TENSORBOARD_DIR = Path(__file__).parent.parent.parent / "runs"
+TENSORBOARD_DIR = Path(__file__).parent.parent / "runs"
 
 
 def set_seed(seed: int = 777):
@@ -213,18 +213,15 @@ class PPO:
         with_advantage = []
         for mini_batch in batch:
             state, action, reward, next_state, done, old_log_action_prob = mini_batch
-            with torch.no_grad():
-                td_target = reward + self.gamma * self.model.value(next_state) * (1 - done)
-                td_errors = td_target - self.model.value(state)
-            td_errors = td_errors.numpy()
 
-            advantages = []
-            advantage = 0.0
-            for td_error in td_errors[::-1]:
-                advantage = self.gamma * self.tau * advantage + td_error[0]
-                advantages.append([advantage])
-            advantages.reverse()
-            advantage = torch.tensor(advantages, dtype=torch.float)
+            # TODO 1: Compute advantage
+            # 1. Compute td_target for each state (hint: use batch)
+            #    TD Target = r + gamma * V(s')
+            # 2. Compute td_error for each state (hint: use batch)
+            #    TD Error = TD Target - V(s)
+            # 3. Compute advantage for each state (hint: solve from the end of the list)
+            #    Advantage = (TD Error + gamma * tau * Advantage) * gamma * tau + TD Error ...
+
             with_advantage.append(
                 (state, action, old_log_action_prob, td_target, advantage),
             )
@@ -236,13 +233,14 @@ class PPO:
         for _ in range(self.n_epochs):
             for mini_batch in batch:
                 state, action, old_log_action_prob, td_target, advantage = mini_batch
-
                 log_prob = self.compute_log_action_prob(state, action)
-                ratio = torch.exp(log_prob - old_log_action_prob)
 
-                surr1 = ratio * advantage
-                surr2 = torch.clamp(ratio, 1 - self.clip_param, 1 + self.clip_param) * advantage
-                loss = -torch.min(surr1, surr2) + F.smooth_l1_loss(self.model.value(state), td_target)
+                # TODO 2: Compute ppo loss
+                # 1. Compute importance sampling (ratio between new policy and old policy)
+                # 2. Compute surrogate loss (importance sampling ratio * advantage)
+                # 3. Compute clipped surrogate loss (clip: 1 - self.clip_param, 1 + self.clip_param)
+                # 4. Compute value loss (mse between td_target and value)
+                # 5. Compute ppo loss (clipped surrogate loss + value loss)
 
                 self.optimizer.zero_grad()
                 loss.mean().backward()
