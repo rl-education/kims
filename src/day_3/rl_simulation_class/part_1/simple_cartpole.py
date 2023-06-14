@@ -28,11 +28,11 @@ class CartpoleTask(SimpleRLTask):
 
         self._num_actions = 1
         self._action_space = spaces.Box(np.ones(self._num_actions) * -1.0, np.ones(self._num_actions) * 1.0)
-        self._num_observations = 4
 
         ######## Practice 1: Set the observation space to match the observation you chose ########
         # Remember that the observation space should be derived from gym.Space
         # (choose the one that fits your observation)
+        self._num_observations = None
         self._observation_space = None
         #########################################################################################
 

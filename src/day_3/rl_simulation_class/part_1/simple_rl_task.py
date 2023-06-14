@@ -47,6 +47,8 @@ class SimpleRLTask(BaseTask, ABC):
             self._num_actions = 1
         if not hasattr(self, "_num_observations"):
             self._num_observations = 1
+        if not hasattr(self, "_num_frames"):
+            self._num_frames = 1
         if not hasattr(self, "_num_states"):
             self.num_states = 0
         if not hasattr(self, "action_space"):
@@ -65,7 +67,7 @@ class SimpleRLTask(BaseTask, ABC):
     def cleanup(self) -> None:
         """Called before calling a reset() on the world. Reset data structures."""
         self._observations_buffer = torch.zeros(
-            (1, self.num_observations),
+            (self._num_frames, self.num_observations),
             device=self._device,
             dtype=torch.float,
         )
