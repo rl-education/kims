@@ -34,7 +34,7 @@ def main() -> None:
     """Initialize IsaacSim with Websocket Streaming"""
     print("Starting for IsaacSim...")
     env = VecEnvBaseLivestream(launch_type=IsaacLaunchType.WEBSOCKET)
-    config = Config(name="", task_config_file="", policy_config_file="", device="cpu", test=True)
+    config = Config(name="", seed=1234, task_config_file="", policy_config_file="", device="cpu", test=True)
     task = get_task(env, config)
     env.set_task(task)
     print(f"The Instance IP is: {requests.get('https://api.ipify.org').text}")
