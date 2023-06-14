@@ -21,6 +21,8 @@ endif
 	$(ISAAC_PYTHON) -m pip install -U pip
 	$(ISAAC_PYTHON) -m pip install -r requirements.txt
 	$(ISAAC_PYTHON) -m pip install -e .
+
+ready-check:
 	$(ISAAC_PYTHON) rl_simulation_class/first_load.py
 
 get-remote-ip:
