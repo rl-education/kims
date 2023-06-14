@@ -32,6 +32,7 @@ class CartpoleTask(SimpleRLTask):
         ######## Practice 1: Set the observation space to match the observation you chose ########
         # Remember that the observation space should be derived from gym.Space
         # (choose the one that fits your observation)
+        # you can also change the self._num_frames (will need to carefully change the get_observation method)
         self._num_observations = None
         self._observation_space = None
         #########################################################################################
