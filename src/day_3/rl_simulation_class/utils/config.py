@@ -60,6 +60,7 @@ class SB3Config:
     ent_coef: float = 0.0
     vf_coef: float = 0.5
     max_grad_norm: float = 1.0
+    seed: int = 0
     verbose: int = 1
     tensorboard_log: str = "./cartpole_tensorboard"
 
@@ -70,6 +71,7 @@ class Config:
     """Configuration for the RL simulation class."""
 
     name: str
+    seed: int
     task_config_file: str
     policy_config_file: str
     config_path: str = ""
@@ -101,8 +103,10 @@ def load_config(config_path: str, config_file_name: str) -> Config:
         config.policy_config.params["config"]["device"] = config.device
         config.policy_config.params["config"]["device_name"] = config.device
         config.policy_config.params["config"]["num_actors"] = config.num_envs
+        config.policy_config.params["seed"] = config.seed
     elif isinstance(config.policy_config, SB3Config):
         config.policy_config.device = config.device
+        config.policy_config.seed = config.seed
     return config
 
 

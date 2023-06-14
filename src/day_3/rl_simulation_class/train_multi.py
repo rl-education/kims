@@ -1,3 +1,5 @@
+import random
+
 from rl_simulation_class.utils.config import Config, RLGamesConfig, load_config
 from rl_simulation_class.utils.vec_env import VecEnvBaseLivestream
 
@@ -45,6 +47,9 @@ def main() -> None:
 
     config: Config = load_config(args.config_path, args.config_file)
     env = get_env(config)
+    # set seed
+    random.seed(config.seed)
+    env.seed(config.seed)
     train(config, env)
     env.close()
 

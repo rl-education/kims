@@ -69,12 +69,9 @@ class MultiEnvRLTask(BaseTask, ABC):
         self._num_envs = self._config.task_config.task.num_envs
         self._env_spacing = self._config.task_config.task.env_spacing
 
-        ####### Practice 1: Create a GridCloner object #######
-        # the GridCloner was already imported for you
-        # the environments should be spaced out by self._env_spacing
-        # the base environment path is stored in self.default_base_path
-        self._cloner = None
-        # define the base path
+        ####### Solution 1: Create a GridCloner object #######
+        self._cloner = GridCloner(spacing=self._env_spacing)
+        self._cloner.define_base_env(self.default_base_path)
         ######################################################
         define_prim(f"{self.default_base_path}/env_0")
 
@@ -109,14 +106,13 @@ class MultiEnvRLTask(BaseTask, ABC):
         and applies collision filters to disable collisions across environments.
         """
         collision_filter_global_paths = [self._ground_plane_path]
-
-        ####### Practice 1: Clone the environment using the GridCloner #######
-        # the environments should have the following name pattern: self.default_base_path/env_{i}
-        # there should be self._num_envs environments
-        prim_paths = None  # self._cloner.generate_paths
-        self._env_pos = None  # self._cloner.clone
+        ####### Solution 1: Clone the environment using the GridCloner #######
+        prim_paths = self._cloner.generate_paths(f"{self.default_base_path}/env", self._num_envs)
+        self._env_pos = self._cloner.clone(
+            source_prim_path=f"{self.default_base_path}/env_0",
+            prim_paths=prim_paths,
+        )
         #####################################################################
-
         self._env_pos = torch.tensor(np.array(self._env_pos), device=self._device, dtype=torch.float)
         self._cloner.filter_collisions(
             self._env._world.get_physics_context().prim_path,
