@@ -28,11 +28,11 @@ class CartpoleTask(SimpleRLTask):
 
         self._num_actions = 1
         self._action_space = spaces.Box(np.ones(self._num_actions) * -1.0, np.ones(self._num_actions) * 1.0)
+        self._num_observations = 4
 
         ######## Practice 1: Set the observation space to match the observation you chose ########
         # Remember that the observation space should be derived from gym.Space
         # (choose the one that fits your observation)
-        self._num_observations = None
         self._observation_space = None
         #########################################################################################
 
@@ -194,6 +194,12 @@ class CartpoleTask(SimpleRLTask):
         ######## Practice 2: Calculate the reward ########
         # The maximum allowed cart position is in the self._reset_dist variable
         # torch.where can be helpful here (https://pytorch.org/docs/stable/generated/torch.where.html)
+        # Reward suggestions:
+        # +1 for every step
+        # -angle^2
+        # -0.01*|cart_vel|-0.005*|pole_vel|
+        # if |cart_pos| > self._reset_dist: -2
+        # if |pole_angle| > pi/2: -2
         reward = None
         ##################################################
 
@@ -214,6 +220,10 @@ class CartpoleTask(SimpleRLTask):
         # The maximum allowed cart position is in the self._reset_dist variable
         # The maximum allowed episode length is in the self._max_episode_length variable
         # torch.where can be helpful here (https://pytorch.org/docs/stable/generated/torch.where.html)
+        # Conditions to implement:
+        # self._episodes_count (this is a torch.Tensor) >= self._max_episode_length
+        # |cart_pos| > self._reset_dist
+        # |pole_angle| > pi/2
         self._done_buffer = None
         #####################################################################################
 
