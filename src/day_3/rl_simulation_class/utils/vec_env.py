@@ -66,13 +66,13 @@ class VecEnvBaseLivestream(VecEnvBase):
             launch_type (IsaacLaunchType): Type of Isaac application to launch. Defaults to IsaacLaunchType.HEADLESS.
             sim_device (int): GPU device ID for running physics simulation. Defaults to 0.
         """
-        experience = ""
-        if launch_type == IsaacLaunchType.HEADLESS:
-            experience = f'{os.environ["EXP_PATH"]}/omni.isaac.sim.python.gym.headless.kit'
+        # experience = ""
+        # if launch_type == IsaacLaunchType.HEADLESS:
+        #     experience = f'{os.environ["EXP_PATH"]}/omni.isaac.sim.python.gym.headless.kit'
 
         self._simulation_app = SimulationApp(
             {"headless": launch_type is not IsaacLaunchType.RENDER, "physics_device": sim_device},
-            experience=experience,
+            # experience=experience,
         )
         carb.settings.get_settings().set("/persistent/omnihydra/useSceneGraphInstancing", True)
         self._render = launch_type is not IsaacLaunchType.HEADLESS
