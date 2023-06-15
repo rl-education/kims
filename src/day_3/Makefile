@@ -13,7 +13,7 @@ init:
 ifeq ($(RUN_REMOTE),1)
 	@echo "Running on remote"
 	@echo "Copying python_fix.sh"
-	mv ./python_fix.sh $(ISAAC_PYTHON_REMOTE)
+	cp ./python_fix.sh $(ISAAC_PYTHON_REMOTE)
 	chmod +x $(ISAAC_PYTHON_REMOTE)
 else
 	@echo "Running on local"
