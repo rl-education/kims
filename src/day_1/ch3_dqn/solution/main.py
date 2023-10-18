@@ -15,13 +15,13 @@ def main(use_ddqn: bool) -> None:
     print(f"state_dim: {state_dim} | action_num: {action_num}\n")
 
     # Create DQN agent
-    model = DQN(env=env, state_dim=state_dim, action_num=action_num, use_ddqn=use_ddqn)
+    dqn = DQN(env=env, state_dim=state_dim, action_num=action_num, use_ddqn=use_ddqn)
 
     # Train DQN agent
-    model.train()
+    dqn.train()
 
     # Test DQN agent
-    model.test()
+    dqn.test()
 
     # Close the CartPole environment
     env.close()
