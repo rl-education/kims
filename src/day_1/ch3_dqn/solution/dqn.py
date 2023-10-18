@@ -26,7 +26,7 @@ class QNetwork(nn.Module):
     def __init__(self, state_dim: int, action_num: int) -> None:
         super(QNetwork, self).__init__()
 
-        self.layers = nn.Sequential(
+        self.layer = nn.Sequential(
             ###
             # Solution 1:
             # Please write the code that constitutes the layer of the Q-network
@@ -44,7 +44,7 @@ class QNetwork(nn.Module):
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return self.layers(x)
+        return self.layer(x)
 
 
 class DQN:
@@ -53,8 +53,8 @@ class DQN:
         env: Env,
         state_dim: int,
         action_num: int,
+        step_num: int = 1000000,
         gamma: float = 0.99,
-        num_steps: int = 1000000,
         batch_size: int = 32,
         epsilon: float = 1.0,
         epsilon_decay: float = 0.995,
@@ -64,7 +64,7 @@ class DQN:
         self.state_dim = state_dim
         self.action_num = action_num
         self.gamma = gamma
-        self.num_steps = num_steps
+        self.step_num = step_num
         self.batch_size = batch_size
         self.epsilon = epsilon
         self.epsilon_decay = epsilon_decay
@@ -125,18 +125,18 @@ class DQN:
         done = torch.FloatTensor(done).to(DEVICE)
 
         # Predict Q(s)
-        q_values = self.current_model(state)
-        q_value = q_values.gather(1, action).squeeze(1)
+        q_value = self.current_model(state)
+        q_value = q_value.gather(1, action).squeeze(1)
 
         ###
         # Solution 4:
         # Please write the code to get the target Q-value for Q regression from DQN or Double DQN
-        target_q_values = self.target_model(next_state)
+        target_q_value = self.target_model(next_state)
         if not self.use_ddqn:
-            target_q_value = target_q_values.max(1)[0]
+            target_q_value = target_q_value.max(1)[0]
         else:
-            next_q_values = self.current_model(next_state).max(1)[1].unsqueeze(1)
-            target_q_value = target_q_values.gather(1, next_q_values).max(1)[0]
+            next_action = self.current_model(next_state).max(1)[1].unsqueeze(1)
+            target_q_value = target_q_value.gather(1, next_action).max(1)[0]
         ###
 
         ###
@@ -157,10 +157,10 @@ class DQN:
         loss = 0.0
         episode_idx = 0
         episode_reward = 0
-        recent_rewards = deque(maxlen=10)
+        recent_return = deque(maxlen=10)
 
         state = self.env.reset()
-        for step_idx in range(1, self.num_steps + 1):
+        for step_idx in range(1, self.step_num + 1):
             # Collect experience (s, a, r, s') using the policy
             action = self.select_action(state)
             next_state, reward, done, _ = self.env.step(action)
@@ -185,7 +185,7 @@ class DQN:
                 self.writer.add_scalar("train/loss", loss, episode_idx)
 
                 state = self.env.reset()
-                recent_rewards.append(episode_reward)
+                recent_return.append(episode_reward)
                 episode_idx += 1
                 episode_reward = 0
 
@@ -198,8 +198,8 @@ class DQN:
                 self.update_target()
 
             # If the rewards for all 10 of the most recent episodes are 490, stop training
-            if np.mean(recent_rewards) > 490:
-                print(f"\nrecent_rewards: {recent_rewards}\n")
+            if np.mean(recent_return) > 490:
+                print(f"\nrecent_return: {recent_return}\n")
                 break
 
     def test(self) -> None:
